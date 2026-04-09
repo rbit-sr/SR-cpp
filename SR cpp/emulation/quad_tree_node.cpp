@@ -1,0 +1,189 @@
+#include "quad_tree_node.h"
+
+using namespace emu;
+
+quad_tree_node::quad_tree_node(const aabb& bounds) :
+	m_center{ bounds.get_center() }, 
+	m_depth{ 0 },
+	m_bounds{ bounds }
+{
+
+}
+
+quad_tree_node::quad_tree_node(const aabb& bounds, int32_t depth) :
+	m_center{ bounds.get_center() },
+	m_depth{ depth },
+	m_bounds{ bounds }
+{
+
+}
+
+quad_tree_node::quad_tree_node(const quad_tree_node& right) :
+	m_center{ right.m_center },
+	m_depth{ right.m_depth },
+	m_bounds{ right.m_bounds },
+	m_leaves{ right.m_leaves }
+{
+	for (int32_t i = 0; i < 4; i++)
+	{
+		if (right.m_children[i] != nullptr)
+			m_children[i] = std::make_unique<quad_tree_node>(*right.m_children[i]);
+	}
+}
+
+quad_tree_node& quad_tree_node::operator=(const quad_tree_node& right)
+{
+	m_center = right.m_center;
+	m_depth = right.m_depth;
+	m_bounds = right.m_bounds;
+	m_leaves = right.m_leaves;
+
+	for (int32_t i = 0; i < 4; i++)
+	{
+		if (right.m_children[i] != nullptr)
+		{
+			if (m_children[i] == nullptr)
+				m_children[i] = std::make_unique<quad_tree_node>(*right.m_children[i]);
+			else
+				*m_children[i] = *right.m_children[i];
+		}
+		else
+			m_children[i].reset();
+	}
+	return *this;
+}
+
+std::unique_ptr<i_clonable> quad_tree_node::clone() const
+{
+	return std::make_unique<quad_tree_node>(*this);
+}
+
+void quad_tree_node::replace_pointers(const std::map<const i_quad_tree_leaf*, i_quad_tree_leaf*>& map)
+{
+	for (int32_t i = 0; i < 4; i++)
+	{
+		if (m_children[i] != nullptr)
+			m_children[i]->replace_pointers(map);
+	}
+
+	for (int32_t i = 0; i < m_leaves.size(); i++)
+	{
+		auto it = map.find(m_leaves[i]);
+		if (it != map.end())
+		{
+			m_leaves[i] = it->second;
+			m_leaves[i]->set_quad_tree_parent(this);
+		}
+	}
+}
+
+void quad_tree_node::clear()
+{
+	for (int32_t i = 0; i < 4; i++)
+		if (m_children[i].get() != nullptr)
+		{
+			m_children[i]->clear();
+			m_children[i].reset();
+		}
+
+	for (i_quad_tree_leaf* leaf : m_leaves)
+		leaf->set_quad_tree_parent(nullptr);
+
+	m_leaves.clear();
+}
+
+void quad_tree_node::add(i_quad_tree_leaf* leaf)
+{
+	if (leaf->get_quad_tree_parent() == nullptr)
+	{
+		if (overlapping_center_axes(leaf->get_bounds()) || m_depth >= 10)
+		{
+			leaf->set_quad_tree_parent(this);
+			m_leaves.push_back(leaf);
+			return;
+		}
+		if (m_children[0] == nullptr)
+			refresh_children();
+		get_overlapping_child(leaf->get_bounds())->add(leaf);
+	}
+}
+
+void quad_tree_node::remove(i_quad_tree_leaf* leaf)
+{
+	quad_tree_node* parent = leaf->get_quad_tree_parent();
+	if (parent != nullptr)
+	{
+		leaf->set_quad_tree_parent(nullptr);
+		auto it = std::find(parent->m_leaves.begin(), parent->m_leaves.end(), leaf);
+		if (it != parent->m_leaves.end())
+			parent->m_leaves.erase(it);
+	}
+}
+
+void quad_tree_node::update(i_quad_tree_leaf* leaf)
+{
+	remove(leaf);
+	add(leaf);
+}
+
+void quad_tree_node::refresh_children()
+{
+	std::array<aabb, 4> bounds
+	{
+		aabb{ m_bounds.min_x, m_center.x, m_bounds.min_y, m_center.y },
+		aabb{ m_center.x, m_bounds.max_x, m_bounds.min_y, m_center.y },
+		aabb{ m_bounds.min_x, m_center.x, m_center.y, m_bounds.max_y },
+		aabb{ m_center.x, m_bounds.max_x, m_center.y, m_bounds.max_y }
+	};
+	
+	for (int32_t i = 0; i < 4; i++)
+	{
+		if (m_children[i] == nullptr)
+			m_children[i] = std::make_unique<quad_tree_node>(bounds[i], m_depth + 1);
+		else
+			*m_children[i] = quad_tree_node(bounds[i], m_depth + 1);
+	}
+}
+
+bool quad_tree_node::overlapping_center_axes(const aabb& bounds) const
+{
+	return (m_center.x >= bounds.min_x && m_center.x <= bounds.max_x) || (m_center.y >= bounds.min_y && m_center.y <= bounds.max_y);
+}
+
+quad_tree_node* quad_tree_node::get_overlapping_child(const aabb& bounds)
+{
+	if (bounds.max_x < m_center.x)
+	{
+		if (bounds.max_y < m_center.y)
+			return m_children[0].get();
+		return m_children[2].get();
+	}
+	else
+	{
+		if (bounds.max_y < m_center.y)
+			return m_children[1].get();
+		return m_children[3].get();
+	}
+}
+
+void quad_tree_node::query_leaves(const aabb& query, std::vector<i_quad_tree_leaf*>& result)
+{
+	query_leaves_recursion(query, result);
+}
+
+void quad_tree_node::query_leaves_recursion(const aabb& query, std::vector<i_quad_tree_leaf*>& result)
+{
+	for (int32_t i = 0; i < m_leaves.size(); i++)
+	{
+		if (m_leaves[i]->get_bounds().overlaps(query))
+			result.push_back(m_leaves[i]);
+	}
+	if (m_children[0] != nullptr)
+	{
+		for (int32_t i = 0; i < 4; i++)
+		{
+			if (m_children[i]->m_bounds.overlaps(query))
+				m_children[i]->query_leaves_recursion(query, result);
+		}
+	}
+}
