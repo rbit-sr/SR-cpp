@@ -182,6 +182,8 @@ namespace emu
 
 		grapple* m_grapple = nullptr;
 
+		int32_t m_player_index = 0;
+
 		std::unique_ptr<i_clonable> clone() const override;
 		bool set(const i_actor_controller* other) override;
 		void replace_pointers(const std::map<const i_actor_controller*, i_actor_controller*>& map) override;

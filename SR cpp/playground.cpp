@@ -85,7 +85,7 @@ void playground::update(emu::timespan delta, const inputs& inputs, emu::vector v
 	if (!m_paused)
 	{
 		for (size_t i = 0; i < m_state.m_inputs.size(); i++)
-			m_state.m_inputs[i] = inputs.held_keys[input_map[i]];
+			m_state.m_inputs[0][i] = inputs.held_keys[input_map[i]];
 	}
 
 	if (!m_paused)

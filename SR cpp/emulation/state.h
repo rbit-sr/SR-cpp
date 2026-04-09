@@ -23,7 +23,7 @@ namespace emu
 		timespan m_time = 0;
 
 		player* m_player = nullptr;
-		std::array<bool, input_count> m_inputs{};
+		std::array<std::array<bool, input_count>, 4> m_inputs{};
 
 		state();
 		state(level& level);
@@ -87,19 +87,28 @@ namespace emu
 		template <std::derived_from<i_actor_controller> T>
 		const T* get_contr(size_t index) const
 		{
-			size_t count = 0;
-
 			for (const auto& actor : actors())
 			{
 				if (const T* contr = dynamic_cast<const T*>(actor->m_controller.get()))
 				{
-					if (index == count)
+					if (index == 0)
 						return contr;
-					else
-						count++;
+					index--;
 				}
 			}
 			return nullptr;
+		}
+
+		template <std::derived_from<i_actor_controller> T>
+		size_t count() const
+		{
+			size_t count = 0;
+			for (const auto& actor : actors())
+			{
+				if (const T* contr = dynamic_cast<const T*>(actor->m_controller.get()))
+					count++;
+			}
+			return count;
 		}
 
 		void update(timespan delta);

@@ -12,7 +12,7 @@ traj_predictions traj_predictions::get(const state& state, const level_prep& pre
 	state_cpy = state;
 
 	if (jump)
-		state_cpy.m_inputs[inp_jump] = true;
+		state_cpy.m_inputs[0][inp_jump] = true;
 
 	player& player = *state_cpy.m_player;
 
@@ -22,7 +22,7 @@ traj_predictions traj_predictions::get(const state& state, const level_prep& pre
 
 	for (size_t i = 0; i < 1500; i++)
 	{
-		int32_t dir = state_cpy.m_inputs[inp_right] ? 1 : -1;
+		int32_t dir = state_cpy.m_inputs[0][inp_right] ? 1 : -1;
 		float cur_dist;
 
 		if (player.d.can_grapple)

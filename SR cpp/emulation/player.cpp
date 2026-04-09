@@ -87,6 +87,7 @@ void player::init()
 	init_hitboxes();
 	m_grapple = m_actor->m_state->spawn<grapple>(vec_zero);
 	m_grapple->m_owner = this;
+	m_player_index = m_actor->m_state->count<player>();
 }
 
 void player::init_hitboxes()
@@ -1764,15 +1765,15 @@ void player::update(timespan time, timespan delta)
 	bool was_left_held = d.left_held;
 	bool was_right_held = d.right_held;
 	bool was_item_held = d.item_held;
-	d.left_held = m_actor->m_state->m_inputs[inp_left];
-	d.right_held = m_actor->m_state->m_inputs[inp_right];
-	d.jump_held = m_actor->m_state->m_inputs[inp_jump];
-	d.grapple_held = m_actor->m_state->m_inputs[inp_grapple];
-	d.slide_held = m_actor->m_state->m_inputs[inp_slide];
-	d.boost_held = m_actor->m_state->m_inputs[inp_boost];
-	d.item_held = m_actor->m_state->m_inputs[inp_item];
+	d.left_held = m_actor->m_state->m_inputs[m_player_index][inp_left];
+	d.right_held = m_actor->m_state->m_inputs[m_player_index][inp_right];
+	d.jump_held = m_actor->m_state->m_inputs[m_player_index][inp_jump];
+	d.grapple_held = m_actor->m_state->m_inputs[m_player_index][inp_grapple];
+	d.slide_held = m_actor->m_state->m_inputs[m_player_index][inp_slide];
+	d.boost_held = m_actor->m_state->m_inputs[m_player_index][inp_boost];
+	d.item_held = m_actor->m_state->m_inputs[m_player_index][inp_item];
 	d.item_pressed = d.item_held && !was_item_held;
-	d.swap_item_held = m_actor->m_state->m_inputs[inp_swap_item];
+	d.swap_item_held = m_actor->m_state->m_inputs[m_player_index][inp_swap_item];
 	if (d.left_held && d.right_held)
 	{
 		if (was_right_held && !was_left_held)
