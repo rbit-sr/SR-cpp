@@ -52,11 +52,9 @@ static bool sloped_ground(collidable_type col_id)
 		col_id == col_slope_floor_right || col_id == col_slope_ceil_left;
 }
 
-get_event_helper::get_event_helper(const state& state)
+get_event_helper::get_event_helper(const player& player)
 {
-	const player& player = *state.m_player;
-
-	m_init_time = state.m_time;
+	m_init_time = player.m_actor->m_state->m_time;
 	m_was_on_ground = player.d.is_on_ground;
 	m_init_ground_col_id = player.d.ground_collidable_type;
 	m_was_on_wall = player.d.is_climbing;
@@ -65,10 +63,9 @@ get_event_helper::get_event_helper(const state& state)
 }
 
 static event_type get_event_type(
-	const state& next_state,
+	const player& player,
 	const get_event_helper& helper)
 {
-	player& player = *next_state.m_player;
 	vector vel = player.m_actor->d.velocity;
 
 	if (helper.m_was_on_ground != player.d.is_on_ground || helper.m_init_ground_col_id != player.d.ground_collidable_type)
@@ -128,23 +125,21 @@ static event_type get_event_type(
 	return evt_none;
 }
 
-event get_event_helper::get_event(const state& next_state)
+event get_event_helper::get_event(const player& player)
 {
 	event event;
-	event.event = get_event_type(next_state, *this);
+	event.event = get_event_type(player, *this);
 	if (event.event != evt_none)
-	{
-		const player& player = *next_state.m_player;
-		
-		event.time = next_state.m_time - m_init_time;
+	{		
+		event.time = player.m_actor->m_state->m_time - m_init_time;
 		event.vel_bef = m_prev_vel;
 		event.vel_aft = player.m_actor->d.velocity;
 
-		*this = get_event_helper{ next_state };
+		*this = get_event_helper{ player };
 	}
 	else
 	{
-		m_prev_vel = next_state.m_player->m_actor->d.velocity;
+		m_prev_vel = player.m_actor->d.velocity;
 	}
 	return event;
 }

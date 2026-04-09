@@ -261,16 +261,15 @@ static float get_grap_dist_point(vector point, std::int32_t dir, bool& hit, std:
 
 // finds the distance of the grapple ceiling from current player position if shooting a grapple actor diagonally upwards
 // returns FLOAT_MAX if the grapple misses
-float level_prep::get_grap_dist(std::int32_t dir, const state& state) const
+float level_prep::get_grap_dist(std::int32_t dir, const player& player) const
 {
 	grap_pot_tile* grap_pot_map = dir == 1 ?
 		m_right_pot_map.get() :
 		m_left_pot_map.get();
 
+	const state& state = *player.m_actor->m_state;
 	std::int32_t width = state.m_collision_engine.m_level->m_tile_layer.m_width;
 	std::int32_t height = state.m_collision_engine.m_level->m_tile_layer.m_height;
-
-	const player& player = *state.m_player;
 
 	vector pos_ul = player.m_actor->d.position;
 	if (dir == 1)

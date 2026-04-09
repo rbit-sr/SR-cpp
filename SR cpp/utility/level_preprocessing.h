@@ -6,6 +6,7 @@
 #include <array>
 
 #include "../emulation/tile_layer_base.h"
+#include "../emulation/player.h"
 #include "graph.h"
 
 namespace emu
@@ -92,7 +93,7 @@ namespace util
 
 		// finds the distance of the grapple ceiling from current player position if shooting a grapple actor diagonally upwards
 		// returns FLOAT_MAX if the grapple misses
-		float get_grap_dist(std::int32_t dir, const emu::state& state) const;
+		float get_grap_dist(std::int32_t dir, const emu::player& player) const;
 
 		// finds the shortest possible path from p1 to p2,
 		// taking the maps collision and player's sliding hitbox into account

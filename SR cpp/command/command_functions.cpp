@@ -47,7 +47,7 @@ void cmd::cmd_prep_level(instance& inst)
 
 void cmd::cmd_get_vel(instance& inst)
 {
-	emu::player* player = inst.m_playground.m_state.m_player;
+	emu::player* player = inst.m_playground.m_state.get_contr<emu::player>(0);
 	if (player == nullptr)
 		throw std::runtime_error{ "No player!" };
 	std::cout << std::format("{} {}\n", player->m_actor->d.velocity.x, player->m_actor->d.velocity.y);

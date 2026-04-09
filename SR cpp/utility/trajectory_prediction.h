@@ -25,7 +25,7 @@ namespace util
 
 		event next_event;
 
-		static traj_predictions get(const emu::state& state, const level_prep& prep, bool jump);
+		static traj_predictions get(const emu::state& state, const level_prep& prep, bool jump, size_t player);
 	};
 }
 

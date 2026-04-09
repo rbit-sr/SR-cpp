@@ -22,7 +22,6 @@ namespace emu
 		collision_engine m_collision_engine;
 		timespan m_time = 0;
 
-		player* m_player = nullptr;
 		std::array<std::array<bool, input_count>, 4> m_inputs{};
 
 		state();
@@ -58,27 +57,19 @@ namespace emu
 
 			m_collision_engine.add_actor(std::move(actor));
 
-			if constexpr (std::is_same_v<T, player>)
-			{
-				m_player = t_ptr;
-			}
-
 			return t_ptr;
 		}
 
 		template <std::derived_from<i_actor_controller> T>
 		T* get_contr(size_t index)
 		{
-			size_t count = 0;
-
 			for (auto& actor : actors())
 			{
 				if (T* contr = dynamic_cast<T*>(actor->m_controller.get()))
 				{
-					if (index == count)
+					if (index == 0)
 						return contr;
-					else
-						count++;
+					index--;
 				}
 			}
 			return nullptr;

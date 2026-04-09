@@ -5,20 +5,20 @@
 using namespace util;
 using namespace emu;
 
-traj_predictions traj_predictions::get(const state& state, const level_prep& prep, bool jump)
+traj_predictions traj_predictions::get(const state& state, const level_prep& prep, bool jump, size_t player_index)
 {
 	traj_predictions traj_pred;
 	thread_local static emu::state state_cpy;
 	state_cpy = state;
 
 	if (jump)
-		state_cpy.m_inputs[0][inp_jump] = true;
+		state_cpy.m_inputs[player_index][inp_jump] = true;
 
-	player& player = *state_cpy.m_player;
+	emu::player& player = *state_cpy.get_contr<emu::player>(player_index);
 
 	//bool prev_ignore_collision = false;
 
-	get_event_helper helper{ state };
+	get_event_helper helper{ player };
 
 	for (size_t i = 0; i < 1500; i++)
 	{
@@ -28,7 +28,7 @@ traj_predictions traj_predictions::get(const state& state, const level_prep& pre
 		if (player.d.can_grapple)
 		{
 			// forward grapple
-			cur_dist = prep.get_grap_dist(dir, state_cpy);
+			cur_dist = prep.get_grap_dist(dir, player);
 			if (cur_dist != FLOAT_MAX)
 			{
 				if (traj_pred.grap_earliest.time == SIZE_MAX)
@@ -44,7 +44,7 @@ traj_predictions traj_predictions::get(const state& state, const level_prep& pre
 			}
 
 			// back grapple
-			cur_dist = prep.get_grap_dist(-dir, state_cpy);
+			cur_dist = prep.get_grap_dist(-dir, player);
 			if (cur_dist != FLOAT_MAX)
 			{
 				if (traj_pred.back_grap_earliest.time == SIZE_MAX)
@@ -81,7 +81,7 @@ traj_predictions traj_predictions::get(const state& state, const level_prep& pre
 
 		state_cpy.update(delta);
 
-		traj_pred.next_event = helper.get_event(state_cpy);
+		traj_pred.next_event = helper.get_event(player);
 	}
 
 	traj_pred.next_event.time = state_cpy.m_time - state.m_time;

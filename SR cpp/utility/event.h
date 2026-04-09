@@ -44,9 +44,9 @@ namespace util
 		emu::vector m_prev_vel;
 
 		get_event_helper() = default;
-		get_event_helper(const emu::state& state);
+		get_event_helper(const emu::player& player);
 
-		event get_event(const emu::state& next_state);
+		event get_event(const emu::player& player/*next player state*/);
 	};
 }
 

@@ -16,22 +16,23 @@ void playground::init()
 {
 	m_state = emu::state{ m_level };
 	m_prep = util::level_prep{ m_level };
-	m_helper = util::get_event_helper(m_state);
+	m_helper = util::get_event_helper(*m_state.get_contr<emu::player>(0));
 }
 
 void playground::reset()
 {
-	if (m_state.m_player != nullptr)
+	emu::player* player = m_state.get_contr<emu::player>(0);
+	if (player != nullptr)
 	{
-		m_state.m_player->reset();
-		m_state.m_player->m_actor->set_position(m_level.get_actor("PlayerStart").position);
-		m_helper = util::get_event_helper(m_state);
+		player->reset();
+		player->m_actor->set_position(m_level.get_actor("PlayerStart").position);
+		m_helper = util::get_event_helper(*m_state.get_contr<emu::player>(0));
 	}
 }
 
 void playground::update_input(const inputs& inputs)
 {
-	emu::player* player = m_state.m_player;
+	emu::player* player = m_state.get_contr<emu::player>(0);
 
 	int32_t sel_x = (inputs.cursor_x + m_camera.position.x) / 16.0f;
 	int32_t sel_y = (inputs.cursor_y + m_camera.position.y) / 16.0f;
@@ -46,7 +47,6 @@ void playground::update_input(const inputs& inputs)
 		reset();
 	if (inputs.held_keys['J'] && player != nullptr)
 	{
-		emu::player* player = m_state.m_player;
 		std::cout << player->m_actor->d.velocity.x << " " << player->m_actor->d.velocity.y << " " << player->m_actor->d.position.x << " " << player->m_actor->d.position.y << "\n";
 	}
 	if (inputs.pressed_keys['F'])
@@ -73,6 +73,8 @@ emu::vector p2;
 
 void playground::update(emu::timespan delta, const inputs& inputs, emu::vector viewport_size)
 {
+	emu::player* player = m_state.get_contr<emu::player>(0);
+
 	if (inputs.pressed_buttons[GLFW_MOUSE_BUTTON_LEFT])
 	{
 		p1 = emu::vector(inputs.cursor_x, inputs.cursor_y) + m_camera.position - emu::vector{ 12.5f, 12.5f };
@@ -92,9 +94,9 @@ void playground::update(emu::timespan delta, const inputs& inputs, emu::vector v
 	{
 		m_state.update(33333);
 		m_camera.viewport_size = viewport_size;
-		m_camera.update(33333, m_state.m_player->m_actor->d.position);
+		m_camera.update(33333, player->m_actor->d.position);
 
-		util::event event = m_helper.get_event(m_state);
+		util::event event = m_helper.get_event(*m_state.get_contr<emu::player>(0));
 
 		if (m_print_events && event.event != m_last_event && event.event != util::evt_none)
 			std::cout << util::event::to_string(event.event) << "\n";

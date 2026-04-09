@@ -18,7 +18,6 @@ state::state(level& level)
 
 	const level_actor& start_position = level.get_actor("PlayerStart");
 	player->m_actor->set_position(start_position.position);
-	m_player = player;
 }
 
 state::state(const state& right) :
@@ -29,8 +28,6 @@ state::state(const state& right) :
 {
 	for (auto& actor : m_collision_engine.m_actors)
 		actor->m_state = this;
-
-	m_player = get_contr<player>(0);
 }
 
 state& state::operator=(const state& right)
@@ -42,7 +39,6 @@ state& state::operator=(const state& right)
 	for (auto& actor : m_collision_engine.m_actors)
 		actor->m_state = this;
 
-	m_player = get_contr<player>(0);
 	return *this;
 }
 
