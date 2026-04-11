@@ -51,6 +51,8 @@ namespace emu::physics
 	constexpr float boost_consumption_rate = 0.85f;
 
 	constexpr float unused = 200.0f;
+
+	constexpr float grapple_hook_speed = 3000.0f;
 }
 
 #endif

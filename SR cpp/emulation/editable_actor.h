@@ -6,6 +6,8 @@
 
 namespace emu
 {
+	struct level_actor;
+
 	struct editable_actor : public i_actor_controller
 	{
 		struct

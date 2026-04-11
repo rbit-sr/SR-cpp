@@ -9,6 +9,12 @@
 
 using namespace emu;
 
+const std::string& level_actor::get(std::string_view key) const
+{
+	auto it = std::ranges::find_if(fields, [&](const auto& p) { return p.first == key; });
+	return it->second; // maybe do proper error checking here
+}
+
 level::level() :
 	m_tile_layer{ 0, 0 }
 {

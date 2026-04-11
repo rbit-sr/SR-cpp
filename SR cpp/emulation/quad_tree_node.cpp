@@ -114,7 +114,7 @@ void quad_tree_node::remove(i_quad_tree_leaf* leaf)
 	if (parent != nullptr)
 	{
 		leaf->set_quad_tree_parent(nullptr);
-		auto it = std::find(parent->m_leaves.begin(), parent->m_leaves.end(), leaf);
+		auto it = std::ranges::find(parent->m_leaves, leaf);
 		if (it != parent->m_leaves.end())
 			parent->m_leaves.erase(it);
 	}
@@ -141,7 +141,7 @@ void quad_tree_node::refresh_children()
 		if (m_children[i] == nullptr)
 			m_children[i] = std::make_unique<quad_tree_node>(bounds[i], m_depth + 1);
 		else
-			*m_children[i] = quad_tree_node(bounds[i], m_depth + 1);
+			*m_children[i] = quad_tree_node{ bounds[i], m_depth + 1 };
 	}
 }
 

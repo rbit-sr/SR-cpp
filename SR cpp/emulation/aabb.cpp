@@ -65,12 +65,12 @@ vector aabb::get_position() const
 	return vector{ min_x, min_y };
 }
 
-void aabb::set_position(vector pos)
+void aabb::set_position(vector position)
 {
-	min_x = pos.x;
-	max_x = pos.x + width;
-	min_y = pos.y;
-	max_y = pos.y + height;
+	min_x = position.x;
+	max_x = position.x + width;
+	min_y = position.y;
+	max_y = position.y + height;
 }
 
 vector aabb::get_center() const
@@ -96,6 +96,16 @@ float aabb::get_rotation() const
 void aabb::set_rotation(float rotation)
 {
 
+}
+
+void aabb::set_from_position_size(vector position, vector size)
+{
+	width = size.x;
+	height = size.y;
+	min_x = position.x;
+	min_y = position.y;
+	max_x = position.x + size.x;
+	max_y = position.y + size.y;
 }
 
 void aabb::set_from_shape(i_collision_shape& shape)

@@ -163,6 +163,14 @@ void draw::draw_player_start(player_start* player_start, const camera& camera)
 
 }
 
+void draw::draw_super_boost_volume(super_boost_volume* super_boost_volume, const camera& camera)
+{
+	draw::draw_rectangle(
+		0.0f, 1.0f, 0.0f,
+		super_boost_volume->m_bounds.get_vertex(0) - camera.position,
+		super_boost_volume->m_bounds.get_vertex(2) - camera.position);
+}
+
 void draw::draw_actor_controller(i_actor_controller* controller, const camera& camera)
 {
 	if (player* player = dynamic_cast<emu::player*>(controller))
@@ -171,6 +179,8 @@ void draw::draw_actor_controller(i_actor_controller* controller, const camera& c
 		draw_grapple(grapple, camera);
 	else if (player_start* player_start = dynamic_cast<emu::player_start*>(controller))
 		draw_player_start(player_start, camera);
+	else if (super_boost_volume* super_boost_volume = dynamic_cast<emu::super_boost_volume*>(controller))
+		draw_super_boost_volume(super_boost_volume, camera);
 }
 
 void draw::draw_state(state* state, const camera& camera)

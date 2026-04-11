@@ -15,7 +15,7 @@ playground::playground()
 void playground::init()
 {
 	m_state = emu::state{ m_level };
-	m_prep = util::level_prep{ m_level };
+	//m_prep = util::level_prep{ m_level };
 	m_helper = util::get_event_helper(*m_state.get_contr<emu::player>(0));
 }
 
@@ -86,7 +86,7 @@ void playground::update(emu::timespan delta, const inputs& inputs, emu::vector v
 
 	if (!m_paused)
 	{
-		for (size_t i = 0; i < m_state.m_inputs.size(); i++)
+		for (size_t i = 0; i < m_state.m_inputs[0].size(); i++)
 			m_state.m_inputs[0][i] = inputs.held_keys[input_map[i]];
 	}
 

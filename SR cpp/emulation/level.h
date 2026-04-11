@@ -11,6 +11,8 @@ namespace emu
 		vector size;
 		std::string type;
 		std::vector<std::pair<std::string, std::string>> fields;
+
+		const std::string& get(std::string_view key) const;
 	};
 
 	struct level

@@ -42,7 +42,6 @@ namespace emu
 			bool unknown2{ 0 }; // unused for now
 			bool local_player{ 0 }; // placed by Velo
 			bool ghost_owned_item{ 0 }; // placed by Velo
-			bool colliding{ 0 }; // placed for collision optimization
 			vector position{ 0, 0 }; // position
 			vector size{ 0, 0 }; // size
 			vector unknown1{ 0, 0 }; // not quite sure, but influences the 'm_bounds' position slightly
@@ -56,7 +55,6 @@ namespace emu
 		quad_tree_node* m_quad_tree_parent = nullptr; // quad tree parent node
 	
 		std::vector<collision_pair> m_collisions; // list of all collisions
-		std::function<void(i_collidable*, i_collidable*, vector, vector, vector, vector)> m_add_collision_action; // adds a new collision to 'm_collisions'
 
 		actor(state* state, int32_t id, vector position, vector size);
 		actor(const actor& right);

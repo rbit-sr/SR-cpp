@@ -10,7 +10,6 @@ collision_engine::collision_engine()
 {
 	m_actors.reserve(128);
 	m_auto_col_det_actors.reserve(128);
-	m_add_collision_action = std::bind_front(&collision_engine::add_collision_pair, this);
 }
 
 collision_engine::collision_engine(const collision_engine& right) :
@@ -39,8 +38,6 @@ collision_engine::collision_engine(const collision_engine& right) :
 
 	for (const auto& actor : m_actors)
 		actor->m_controller->replace_pointers(contr_map);
-
-	m_add_collision_action = std::bind_front(&collision_engine::add_collision_pair, this);
 }
 
 collision_engine& collision_engine::operator=(const collision_engine& right)
@@ -199,23 +196,6 @@ int32_t collision_engine::trace(vector start_point, vector end_point, std::vecto
 
 int32_t collision_engine::trace(vector start_point, vector end_point, collision_filter filter, std::vector<collision_pair*>& collisions)
 {
-#ifdef OPTIMIZE_COLLISION
-	if (start_point.y == end_point.y)
-	{
-		if (start_point.x > end_point.x)
-			std::swap(start_point.x, end_point.x);
-		if (!m_level->is_colliding_hori(start_point, end_point.x - start_point.x))
-			return 0;
-	}
-	else if (start_point.x == end_point.x)
-	{
-		if (start_point.y > end_point.y)
-			std::swap(start_point.y, end_point.y);
-		if (!m_level->is_colliding_vert(start_point, end_point.y - start_point.y))
-			return 0;
-	}
-#endif
-
 	auto& trace_line_actors = caches::inst.trace_line_actors;
 	auto& trace_line_actors_count = caches::inst.trace_line_actors_count;
 
@@ -301,11 +281,6 @@ int32_t collision_engine::check_shape(
 	collision_filter filter, 
 	std::vector<collision_pair*>& collisions)
 {
-#ifdef OPTIMIZE_COLLISION
-	if (!m_level->is_colliding(bounds))
-		return 0;
-#endif
-
 	auto& trace_polygon_actors = caches::inst.trace_polygon_actors;
 	auto& trace_polygon_actors_count = caches::inst.trace_polygon_actors_count;
 
@@ -327,12 +302,6 @@ void collision_engine::refresh_collisions_on_actor(actor* actor)
 {
 	actor->reset_collision(0.0f, false);
 	actor->reset_changed();
-
-#ifdef OPTIMIZE_COLLISION
-	if (!m_level->is_colliding(actor->m_bounds))
-		return;
-#endif
-
 	if (actor->d.is_collidable)
 		m_quad_tree.update(actor);
 
@@ -348,12 +317,7 @@ void collision_engine::refresh_collisions_on_actor(actor* actor, float remaining
 	if (actor->d.is_collidable)
 		m_quad_tree.update(actor);
 
-#ifdef OPTIMIZE_COLLISION
-	if (!m_level->is_colliding(actor->m_bounds))
-		return;
-#endif
-
-	get_collision_candidates(actor, actor->m_add_collision_action);
+	get_collision_candidates(actor, std::bind_front(&actor::add_collision, actor));
 	check_collision_candidates(actor, remaining_delta_time);
 }
 
@@ -380,12 +344,6 @@ void collision_engine::update_collisions(float delta_s)
 			actor->reset_collision(delta_s, true);
 			actor->reset_changed();
 
-#ifdef OPTIMIZE_COLLISION
-			actor->d.colliding = m_level->is_colliding(actor->m_bounds);
-			if (!actor->d.colliding)
-				continue;
-#endif
-
 			if (actor->is_moving())
 				m_quad_tree.update(actor.get());
 		}
@@ -400,59 +358,8 @@ void collision_engine::get_collision_candidates_all_actors()
 	{
 		if (actor->get_collision() != nullptr && actor->d.is_collision_active)
 		{
-#ifdef OPTIMIZE_COLLISION
-			if (!actor->d.colliding)
-				continue;
-#endif
-			get_collision_candidates(actor, actor->m_add_collision_action);
+			get_collision_candidates(actor, std::bind_front(&actor::add_collision, actor));
 		}
-	}
-}
-
-void collision_engine::get_collision_candidates(i_collidable* collidable)
-{
-	if (collidable->get_collision() != nullptr)
-	{
-		caches::inst.collision_pairs.clear();
-		get_collision_candidates(collidable, m_add_collision_action);
-	}
-}
-
-void collision_engine::get_collision_candidates(
-	i_collidable* collidable, 
-	std::function<void(i_collidable*, i_collidable*, vector, vector, vector, vector)> add_collision)
-{
-	auto& query_results = caches::inst.query_results;
-
-	query_results.clear();
-	m_quad_tree.query_leaves(collidable->get_bounds(), query_results);
-	for (int32_t i = 0; i < query_results.size(); i++)
-	{
-		i_collidable* query_result = query_results[i];
-		if (
-			query_result->get_collision() != nullptr && 
-			collidable != query_result && 
-			query_result->get_collision_filter().collides_with(collidable->get_collision_filter()))
-		{
-			add_collision(
-				collidable, query_result, 
-				collidable->get_position(), collidable->get_velocity(), 
-				query_result->get_position(), query_result->get_velocity());
-		}
-	}
-
-	auto& tile_actors = caches::inst.tile_actors;
-	auto& tile_actors_count = caches::inst.tile_actors_count;
-	
-	int32_t prev_count = tile_actors_count;
-
-	m_level->m_tile_layer.get_tile_actors_at(collidable->get_bounds(), collidable->get_collision_filter());
-	for (int32_t j = prev_count; j < tile_actors_count; j++)
-	{
-		add_collision(
-			collidable, tile_actors[j].get(),
-			collidable->get_position(), collidable->get_velocity(),
-			tile_actors[j]->get_position(), tile_actors[j]->get_velocity());
 	}
 }
 

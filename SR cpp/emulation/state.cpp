@@ -2,6 +2,7 @@
 #include "player.h"
 #include "grapple.h"
 #include "player_start.h"
+#include "super_boost_volume.h"
 
 using namespace emu;
 
@@ -13,6 +14,13 @@ state::state()
 state::state(level& level)
 {
 	m_collision_engine.m_level = &level;
+	m_collision_engine.unknown1(aabb{ 0, level.m_tile_layer.get_width() * 16.0f, -500, level.m_tile_layer.get_height() * 16.0f });
+
+	for (const level_actor& def : level.m_actors)
+	{
+		if (def.type == "SuperBoostVolume")
+			spawn<super_boost_volume>(def);
+	}
 
 	player* player = spawn<emu::player>({ 0.0f, 0.0f });
 

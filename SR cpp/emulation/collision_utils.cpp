@@ -1,3 +1,5 @@
+#include <array>
+
 #include "common.h"
 #include "collision_utils.h"
 #include "aabb.h"

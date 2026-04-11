@@ -23,12 +23,10 @@ namespace emu
 	// Stores all the actors and provides lots of utilities for handling collision.
 	struct collision_engine
 	{
-		quad_tree_node m_quad_tree = quad_tree_node{ aabb() };
+		quad_tree_node m_quad_tree = quad_tree_node{ aabb{} };
 		std::vector<std::unique_ptr<actor>> m_actors; // this list owns all the actors
 		std::vector<actor*> m_auto_col_det_actors; // all actors with 'm_automatic_collision_detection' set to true
 		level* m_level;
-
-		std::function<void(i_collidable*, i_collidable*, vector, vector, vector, vector)> m_add_collision_action;
 
 		collision_engine();
 		collision_engine(const collision_engine& right);
@@ -62,14 +60,16 @@ namespace emu
 		void clear_collisions();
 		void update_collisions(float delta_s);
 		void get_collision_candidates_all_actors();
-		void get_collision_candidates(i_collidable* collidable); // stores collision pairs in 'm_collision_pairs_buf'
+		void get_collision_candidates(std::derived_from<i_collidable> auto* collidable); // stores collision pairs in 'm_collision_pairs_buf'
 		void get_collision_candidates(
-			i_collidable* collidable, 
-			std::function<void(i_collidable*, i_collidable*, vector, vector, vector, vector)> add_collision);
+			std::derived_from<i_collidable> auto* collidable,
+			std::invocable<i_collidable*, i_collidable*, vector, vector, vector, vector> auto&& add_collision);
 		void check_collision_candidates_all_actors(float delta_s);
 		void check_collision_candidates(actor* actor, float delta_s);
 		int32_t check_collision_candidates_from_buf(std::vector<collision_pair*>& colliding);
 	};
 }
+
+#include "collision_engine_templates.cpp"
 
 #endif

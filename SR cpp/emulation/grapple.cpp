@@ -2,6 +2,7 @@
 #include "common.h"
 #include "tile_actor.h"
 #include "player.h"
+#include "physics_constants.h"
 
 using namespace emu;
 
@@ -79,7 +80,7 @@ void grapple::reset()
 void grapple::connect(vector position)
 {
 	m_actor->d.is_collision_active = true;
-	d.connected = true;
+	d.is_connected = true;
 	// ignore graphics code
 	m_actor->d.velocity = vec_zero;
 	m_actor->set_position(position);
@@ -89,9 +90,9 @@ void grapple::connect(vector position)
 void grapple::shoot(vector position, vector direction)
 {
 	m_actor->d.is_collision_active = true;
-	d.connected = false;
+	d.is_connected = false;
 	m_actor->set_position(position);
-	m_actor->d.velocity = direction * 3000.0f;
+	m_actor->d.velocity = direction * physics::grapple_hook_speed;
 	d.direction = direction;
 	// ignore graphics code
 	d.collision_filter.m_category_bits = 0x01000000u;
@@ -100,7 +101,7 @@ void grapple::shoot(vector position, vector direction)
 void grapple::cancel()
 {
 	m_actor->d.is_collision_active = false;
-	d.connected = false;
+	d.is_connected = false;
 	// ignore graphics code
 	d.collision_filter.m_category_bits = 0x0u;
 	m_actor->d.velocity = vec_zero;
@@ -108,43 +109,43 @@ void grapple::cancel()
 
 void grapple::resolve_collision(timespan time, timespan delta)
 {
-	if (!m_actor->d.is_collision_active || d.connected)
+	if (!m_actor->d.is_collision_active || d.is_connected)
 		return;
 	
 	float delta_s = delta.seconds();
-	vector cent = get_center();
+	vector center = get_center();
 	i_collidable* closest_tile_actor = nullptr;
 	collision_pair* closest_collision = nullptr;
-	float min_dist = FLOAT_MAX;
-	bool flag = false;
+	float min_distance = FLOAT_MAX;
+	bool collision_found = false;
 	for (int32_t i = 0; i < m_actor->get_collision_count(); i++)
 	{
 		collision_pair* collision = m_actor->get_collision(i);
 		if (collision->m_is_colliding)
 		{
-			flag = true;
+			collision_found = true;
 			if (closest_collision == nullptr)
 				closest_collision = collision;
 			if (tile_actor* tile_actor = dynamic_cast<::tile_actor*>(collision->m_target))
 			{
-				float dist = (cent - tile_actor->get_bounds().get_center()).length_sqr();
-				if (dist < min_dist || (dist == min_dist && tile_actor->get_collidable_type() == 6))
+				float distance = (center - tile_actor->get_bounds().get_center()).length_sqr();
+				if (distance < min_distance || (distance == min_distance && tile_actor->get_collidable_type() == col_grapple_ceil))
 				{
 					closest_collision = collision;
 					closest_tile_actor = collision->m_target;
-					min_dist = dist;
+					min_distance = distance;
 				}
 			}
 		}
 	}
-	if (flag)
+	if (collision_found)
 	{
-		if (closest_tile_actor != nullptr && closest_tile_actor->get_collidable_type() == 6)
+		if (closest_tile_actor != nullptr && closest_tile_actor->get_collidable_type() == col_grapple_ceil)
 		{
-			connect(vector(
-				std::min(closest_tile_actor->get_bounds().max_x - 1.5f * m_bounds.width, std::max(closest_tile_actor->get_bounds().min_x - 0.5f * m_bounds.width, m_actor->d.position.x)),
-				closest_tile_actor->get_bounds().max_y
-			));
+			connect(vector{
+					std::min(closest_tile_actor->get_bounds().max_x - 1.5f * m_bounds.width, std::max(closest_tile_actor->get_bounds().min_x - 0.5f * m_bounds.width, m_actor->d.position.x)),
+					closest_tile_actor->get_bounds().max_y
+				});
 			// ignore sound code
 		}
 		else

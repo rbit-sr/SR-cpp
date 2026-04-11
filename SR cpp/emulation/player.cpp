@@ -9,6 +9,7 @@
 #include "state.h"
 #include "caches.h"
 #include "physics_constants.h"
+#include "super_boost_volume.h"
 
 using namespace emu;
 
@@ -275,7 +276,7 @@ void player::update_basic(timespan time, timespan delta)
 			}
 			update_base_acceleration(velocity);
 			float x = velocity.x;
-			if (!d.is_climbing && !d.is_sliding && !m_grapple->d.connected && !d.is_stunned && !d.is_dying && d.right_held && !d.left_held)
+			if (!d.is_climbing && !d.is_sliding && !m_grapple->d.is_connected && !d.is_stunned && !d.is_dying && d.right_held && !d.left_held)
 			{
 				if (d.collision_tangent.x >= 0.0f || d.base_acceleration < 0.0f)
 					velocity += d.collision_tangent * d.base_acceleration * d.delta;
@@ -284,7 +285,7 @@ void player::update_basic(timespan time, timespan delta)
 				if (x <= 0.0f && velocity.x > 0.0f)
 					d.move_direction = 1;
 			}
-			else if (!d.is_climbing && !d.is_sliding && !m_grapple->d.connected && !d.is_stunned && !d.is_dying && d.left_held && !d.right_held)
+			else if (!d.is_climbing && !d.is_sliding && !m_grapple->d.is_connected && !d.is_stunned && !d.is_dying && d.left_held && !d.right_held)
 			{
 				if (d.collision_tangent.x <= 0.0f || d.base_acceleration < 0.0f)
 					velocity += d.collision_tangent * d.base_acceleration * d.delta;
@@ -293,7 +294,7 @@ void player::update_basic(timespan time, timespan delta)
 				if (x >= 0.0f && velocity.x < 0.0f)
 					d.move_direction = -1;
 			}
-			else if (!m_grapple->d.connected && velocity.x != 0.0f)
+			else if (!m_grapple->d.is_connected && velocity.x != 0.0f)
 			{
 				if (d.is_on_ground)
 				{
@@ -307,7 +308,7 @@ void player::update_basic(timespan time, timespan delta)
 				if ((x > 0.0f && velocity.x < 0.0f) || (x < 0.0f && velocity.x > 0.0f))
 					velocity.x = 0.0f;
 			}
-			else if (m_grapple->d.connected)
+			else if (m_grapple->d.is_connected)
 			{
 				if (d.is_swinging)
 				{
@@ -325,14 +326,14 @@ void player::update_basic(timespan time, timespan delta)
 				{
 					int direction = (m_grapple->d.direction.x < 0.0f) ? -1 : 1;
 					// irrelevant code
-					float radius = (m_actor->get_collision()->get_center() - (m_grapple->get_center())).length(); // todo
+					float radius = (m_actor->get_collision()->get_center() - m_grapple->get_center()).length(); // todo
 					connect_grapple(m_grapple->get_center(), radius, direction); // todo
 				}
 			}
 			else
 				velocity.x = 0.0f;
 
-			if (!m_grapple->d.connected && !d.is_grappling && ((time - d.slide_time).seconds() > physics::slide_cooldown || d.is_sliding) && d.slide_held && velocity.length() > physics::min_slide_speed && !d.was_slide_cancelled)
+			if (!m_grapple->d.is_connected && !d.is_grappling && ((time - d.slide_time).seconds() > physics::slide_cooldown || d.is_sliding) && d.slide_held && velocity.length() > physics::min_slide_speed && !d.was_slide_cancelled)
 			{
 				if (d.is_on_ground)
 					// ignore sound code
@@ -350,7 +351,7 @@ void player::update_basic(timespan time, timespan delta)
 			}
 			if (d.was_slide_cancelled && (!d.slide_held || !d.jump_held || (time - d.slide_cancel_time).seconds() > physics::slide_cancel_cooldown))
 				d.was_slide_cancelled = false;
-			if (d.jump_held && !d.is_stunned && !d.is_dying && !m_grapple->d.connected && (!d.is_sliding || d.jump_state < 1))
+			if (d.jump_held && !d.is_stunned && !d.is_dying && !m_grapple->d.is_connected && (!d.is_sliding || d.jump_state < 1))
 			{
 				if (d.is_foley_slide)
 				{
@@ -433,7 +434,7 @@ void player::update_basic(timespan time, timespan delta)
 				d.can_buffer_wall_jump = false;
 				d.initial_jump_velocity = vec_zero;
 			}
-			if (d.is_in_air && !m_grapple->d.connected)
+			if (d.is_in_air && !m_grapple->d.is_connected)
 			{
 				if (d.left_held && !d.right_held)
 				{
@@ -480,14 +481,14 @@ void player::update_basic(timespan time, timespan delta)
 					float delta_angle = std::asin((double)std::clamp(speed * 0.5f * d.delta / d.swing_radius, -1.0f, 1.0f)) * 2.0f;
 					if (d.move_direction == 1)
 						delta_angle = -delta_angle;
-					float new_ang = d.swing_angle + delta_angle;
-					if (new_ang < -0.3141592700403172 && new_ang > -2.827433383549476)
+					float new_angle = d.swing_angle + delta_angle;
+					if (new_angle < -0.3141592700403172 && new_angle > -2.827433383549476)
 					{
 						cancel_grapple();
 					}
 					else
 					{
-						velocity = vector{ (float)(std::cos((double)new_ang) * d.swing_radius), (float)(std::sin((double)new_ang) * d.swing_radius) } + grapple_center - center;
+						velocity = vector{ (float)(std::cos((double)new_angle) * d.swing_radius), (float)(std::sin((double)new_angle) * d.swing_radius) } + grapple_center - center;
 						velocity = velocity.normalized() * speed;
 					}
 				}
@@ -539,7 +540,7 @@ void player::update_basic(timespan time, timespan delta)
 				velocity.y = std::min(velocity.y, -physics::unused);
 				velocity.x = d.move_direction * 0.5f * physics::unused;
 			}
-			if (!d.is_on_ground && !m_grapple->d.connected && !d.is_climbing)
+			if (!d.is_on_ground && !m_grapple->d.is_connected && !d.is_climbing)
 				velocity += physics::gravity * d.delta;
 			m_actor->d.velocity = velocity;
 			// ignore sound code
@@ -595,7 +596,7 @@ void player::update_base_acceleration(vector velocity)
 		else
 			d.base_acceleration = 0.0f;
 	}
-	else if (!d.is_sliding || (m_grapple->d.connected && speed > physics::running_speed * get_velocity_multiplier()))
+	else if (!d.is_sliding || (m_grapple->d.is_connected && speed > physics::running_speed * get_velocity_multiplier()))
 	{
 		float num = d.collision_tangent.y > 0.0f ?
 			1.0f + std::min(0.75f, 1.0f - vector{ (float)d.move_direction, 0.0f }.dot(d.collision_tangent)) :
@@ -610,7 +611,7 @@ void player::update_base_acceleration(vector velocity)
 		else
 			d.base_acceleration = physics::acceleration_high * get_acceleration_multiplier();
 	}
-	else if (m_grapple->d.connected) 
+	else if (m_grapple->d.is_connected) 
 	{
 		d.base_acceleration = 0.0f;
 	}
@@ -628,7 +629,7 @@ void player::update_base_acceleration(vector velocity)
 	else
 		d.base_acceleration = physics::acceleration_low;
 
-	if (d.is_in_air && !m_grapple->d.connected)
+	if (d.is_in_air && !m_grapple->d.is_connected)
 	{
 		if (d.boost_cooldown > 0.0f && std::abs(velocity.x) > physics::running_speed * get_velocity_multiplier() && !d.is_using_boost && !d.is_using_drill)
 			d.base_acceleration = -physics::deceleration_medium;
@@ -1403,6 +1404,42 @@ void player::unknown6()
 	}
 }
 
+void player::resolve_object_collisions(int max_iteration)
+{
+	const collision_pair* collision = m_actor->get_collision(0);
+	int32_t num = 0;
+	while (num < m_actor->get_collision_count() && collision->m_iteration <= max_iteration)
+	{
+		collision = m_actor->get_collision(0);
+		if (collision->m_is_colliding && !dynamic_cast<tile_actor*>(collision->m_target))
+			resolve_object_collision(collision->m_target);
+		num++;
+	}
+}
+
+void player::resolve_object_collision(i_collidable* a1)
+{
+	int32_t collidable_type = a1->get_collidable_type();
+	switch (collidable_type)
+	{
+	case col_finish_trigger:
+		d.has_touched_finish_bomb = true;
+		break;
+	case col_super_boost:
+		super_boost_volume* super_boost_volume = static_cast<emu::super_boost_volume*>(static_cast<actor*>(a1)->m_controller.get());
+		// ignore sound code
+		d.super_boost_force = super_boost_volume->get_direction_vector() * physics::super_boost_speed;
+		d.super_boost_direction = super_boost_volume->get_direction_vector();
+		d.jump_state = 0;
+		d.is_inside_super_boost = true;
+		if (d.is_stunned)
+		{
+			d.is_stunned = false;
+			d.stunned_by_id = INT32_MIN;
+		}
+	}
+}
+
 void player::resolve_collision_implementation(timespan time)
 {
 	d.previous_position = m_actor->d.position;
@@ -1415,7 +1452,7 @@ void player::resolve_collision_implementation(timespan time)
 	int num3 = 0;
 	vector zero2 = vec_zero;
 	vector zero3 = vec_zero;
-	// todo
+	resolve_object_collisions(0);
 	for (int32_t i = 1; i < m_actor->d.total_iterations; i++)
 	{
 		collision_pair collision_pair;
@@ -1507,7 +1544,7 @@ void player::resolve_collision_implementation(timespan time)
 			}
 			else if (std::abs(d.collision_tangent.y) == 1.0f && (collision_pair.m_target->get_collision()->get_center().x - get_collision()->get_center().x) * m_actor->d.velocity.x > 0.0f)
 			{
-				if (m_grapple->d.connected && m_actor->d.velocity.x * (float)d.move_direction > 0.0f)
+				if (m_grapple->d.is_connected && m_actor->d.velocity.x * (float)d.move_direction > 0.0f)
 				{
 					cancel_grapple();
 				}
@@ -1547,9 +1584,9 @@ bool player::any_collision_with_solid(int32_t a1, vector& a2)
 				a2 += (center - collision->m_target->get_collision()->get_center()).normalized();
 				flag = true;
 			}
-			if (!(dynamic_cast<tile_actor*>(collision->m_target)))
+			if (!dynamic_cast<tile_actor*>(collision->m_target))
 			{
-				// todo
+				resolve_object_collision(collision->m_target);
 			}
 		}
 		num++;
@@ -1641,10 +1678,7 @@ void player::resolve_collision(timespan time, timespan delta)
 {
 	// todo
 	d.delta = delta.seconds();
-	//if (!optimize_collision)
-		resolve_collision_implementation(time);
-	//else
-		//m_actor->update_position();
+	resolve_collision_implementation(time);
 	update_hitboxes();
 	// ignore graphics code
 }
@@ -1704,7 +1738,7 @@ void player::update_item(timespan time)
 		d.right_held = false;
 		d.jump_held = false;
 		// todo
-		if (m_grapple != nullptr && (m_grapple->d.connected || d.is_grappling))
+		if (m_grapple != nullptr && (m_grapple->d.is_connected || d.is_grappling))
 			cancel_grapple();
 		get_off_wall(time);
 		// ignore graphics code

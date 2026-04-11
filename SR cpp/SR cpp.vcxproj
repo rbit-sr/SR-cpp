@@ -47,7 +47,9 @@
     <ClInclude Include="Emulation\player.h" />
     <ClInclude Include="Emulation\quad_tree_node.h" />
     <ClInclude Include="Emulation\player_start.h" />
+    <ClInclude Include="emulation\resizable_editable_actor.h" />
     <ClInclude Include="Emulation\state.h" />
+    <ClInclude Include="emulation\super_boost_volume.h" />
     <ClInclude Include="Emulation\tile_actor.h" />
     <ClInclude Include="Emulation\tile_layer_base.h" />
     <ClInclude Include="Emulation\timespan.h" />
@@ -98,7 +100,9 @@
     <ClCompile Include="Emulation\player.cpp" />
     <ClCompile Include="Emulation\quad_tree_node.cpp" />
     <ClCompile Include="Emulation\player_start.cpp" />
+    <ClCompile Include="emulation\resizable_editable_actor.cpp" />
     <ClCompile Include="Emulation\state.cpp" />
+    <ClCompile Include="emulation\super_boost_volume.cpp" />
     <ClCompile Include="Emulation\tile_actor.cpp" />
     <ClCompile Include="Emulation\tile_layer_base.cpp" />
     <ClCompile Include="Emulation\timespan.cpp" />
@@ -127,6 +131,12 @@
     <ClCompile Include="Utility\event.cpp" />
     <ClCompile Include="Utility\level_preprocessing.cpp" />
     <ClCompile Include="Utility\trajectory_prediction.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="emulation\collision_engine_templates.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

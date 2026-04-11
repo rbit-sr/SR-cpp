@@ -7,7 +7,6 @@
 #include "trace_line_actor.h"
 #include "trace_polygon_actor.h"
 #include "interfaces.h"
-#include "state.h"
 
 // provides various caches for various collision routines to be used
 

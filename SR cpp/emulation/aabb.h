@@ -28,13 +28,14 @@ namespace emu
 		vector get_vertex(int32_t index) const override;
 		void get_vertices(std::vector<vector>& vertices) const override;
 		vector get_position() const override;
-		void set_position(vector pos) override;
+		void set_position(vector position) override;
 		vector get_center() const override;
 		vector get_pivot() const override;
 		void set_pivot(vector pivot) override;
 		float get_rotation() const override;
 		void set_rotation(float rotation) override;
 
+		void set_from_position_size(vector position, vector size);
 		void set_from_shape(i_collision_shape& shape);
 
 		bool overlaps(const aabb& other) const;

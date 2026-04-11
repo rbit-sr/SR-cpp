@@ -16,7 +16,7 @@ namespace emu
 	{
 		struct
 		{
-			bool connected{ 0 };
+			bool is_connected{ 0 };
 			collision_filter collision_filter{ 0x0u, 0x0EF0CFBCu };
 			vector direction{ 1.0f, 1.0f };
 		} d;

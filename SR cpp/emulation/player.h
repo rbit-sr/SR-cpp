@@ -226,6 +226,8 @@ namespace emu
 		void unknown11(timespan time, i_collidable* a1);
 		void check_collision(timespan time, timespan delta);
 
+		void resolve_object_collisions(int max_iteration);
+		void resolve_object_collision(i_collidable* a1);
 		void resolve_collision_implementation(timespan time);
 		bool any_collision_with_solid(int32_t a1, vector& a2);
 		bool unknown9(int32_t a1, int32_t a2);

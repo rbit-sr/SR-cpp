@@ -12,7 +12,6 @@ actor::actor(state* state, int32_t id, vector position, vector size) :
 	d.size = size;
 
 	m_bounds = aabb{ d.position.x, d.position.x + d.size.x, d.position.y, d.position.y + d.size.y };
-	m_add_collision_action = std::bind_front(&actor::add_collision, this);
 }
 
 actor::actor(const actor& right) :
@@ -23,9 +22,7 @@ actor::actor(const actor& right) :
 	m_quad_tree_parent{ right.m_quad_tree_parent }
 {
 	m_controller->set_actor(this);
-	
-	m_add_collision_action = std::bind_front(&actor::add_collision, this);
-}
+	}
 
 actor& actor::operator=(const actor& right)
 {
