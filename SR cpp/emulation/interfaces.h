@@ -54,14 +54,6 @@ namespace emu
 		virtual collidable_type get_collidable_type() const = 0;
 	};
 
-	struct i_quad_tree_leaf : public i_collidable
-	{
-		virtual ~i_quad_tree_leaf() = default;
-
-		virtual quad_tree_node* get_quad_tree_parent() = 0;
-		virtual void set_quad_tree_parent(quad_tree_node* parent) = 0;
-	};
-
 	struct i_actor_controller : public i_clonable
 	{
 		virtual ~i_actor_controller() = default;

@@ -26,10 +26,7 @@ struct caches
 	std::vector<std::unique_ptr<emu::trace_polygon_actor>> trace_polygon_actors;
 	size_t trace_polygon_actors_count;
 
-	std::vector<emu::i_quad_tree_leaf*> query_results;
-
-	std::vector<emu::vector> vertices1;
-	std::vector<emu::vector> vertices2;
+	std::vector<emu::actor*> query_results;
 };
 
 #endif

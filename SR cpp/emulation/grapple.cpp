@@ -112,7 +112,7 @@ void grapple::resolve_collision(timespan time, timespan delta)
 	if (!m_actor->d.is_collision_active || d.is_connected)
 		return;
 	
-	float delta_s = delta.seconds();
+	float delta_s = (float)delta.seconds();
 	vector center = get_center();
 	i_collidable* closest_tile_actor = nullptr;
 	collision_pair* closest_collision = nullptr;

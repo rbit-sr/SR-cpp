@@ -17,7 +17,7 @@ std::stringstream decode_gzip(const char* filename)
 	std::stringstream unzipped_data;
 	while (true)
 	{
-		unzipped_bytes = gzread(in_file, unzip_buffer.data(), unzip_buffer.size());
+		unzipped_bytes = gzread(in_file, unzip_buffer.data(), (unsigned int)unzip_buffer.size());
 		if (unzipped_bytes > 0)
 			unzipped_data.write(unzip_buffer.data(), unzipped_bytes);
 		else

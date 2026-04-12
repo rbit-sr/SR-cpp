@@ -26,7 +26,9 @@ namespace emu
 		tile_slope_ceil_right = 12,
 		tile_slope_ceil_left = 13,
 		tile_checkered_slope_ceil_right = 14,
-		tile_checkered_slope_ceil_left = 15
+		tile_checkered_slope_ceil_left = 15,
+
+		tile_count
 	};
 
 	struct tile_layer_base

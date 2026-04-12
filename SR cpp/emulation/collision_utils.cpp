@@ -6,15 +6,40 @@
 #include "convex_polygon.h"
 #include "line_trace.h"
 #include "caches.h"
+#include "config.h"
 
 using namespace emu;
 
 bool collision_utils::intersect(i_collision_shape* source, i_collision_shape* target, vector& mtd)
 {
-	if (source->get_id() == shape_aabb && target->get_id() == shape_aabb)
+	shape source_shape = source->get_id();
+	shape target_shape = target->get_id();
+
+	if (source_shape == shape_aabb && target_shape == shape_aabb)
 		return aabb_aabb_intersect(static_cast<aabb*>(source), static_cast<aabb*>(target), mtd);
-	else
-		return polygon_polygon_intersect(source, target, mtd);
+#ifndef OPTIMIZE_COLLISION
+	else if (source_shape == shape_convex_polygon && target_shape == shape_aabb)
+		return polygon_polygon_intersect(static_cast<convex_polygon*>(source), static_cast<aabb*>(target), mtd);
+#endif
+	else if (source_shape == shape_line_trace && target_shape == shape_aabb)
+		return polygon_polygon_intersect(static_cast<line_trace*>(source), static_cast<aabb*>(target), mtd);
+	else if (source_shape == shape_aabb && target_shape == shape_convex_polygon)
+		return polygon_polygon_intersect(static_cast<aabb*>(source), static_cast<convex_polygon*>(target), mtd);
+#ifndef OPTIMIZE_COLLISION
+	else if (source_shape == shape_convex_polygon && target_shape == shape_convex_polygon)
+		return polygon_polygon_intersect(static_cast<convex_polygon*>(source), static_cast<convex_polygon*>(target), mtd);
+#endif
+	else if (source_shape == shape_line_trace && target_shape == shape_convex_polygon)
+		return polygon_polygon_intersect(static_cast<line_trace*>(source), static_cast<convex_polygon*>(target), mtd);
+#ifndef OPTIMIZE_COLLISION
+	else if (source_shape == shape_aabb && target_shape == shape_line_trace)
+		return polygon_polygon_intersect(static_cast<aabb*>(source), static_cast<line_trace*>(target), mtd);
+	else if (source_shape == shape_convex_polygon && target_shape == shape_line_trace)
+		return polygon_polygon_intersect(static_cast<convex_polygon*>(source), static_cast<line_trace*>(target), mtd);
+	else if (source_shape == shape_line_trace && target_shape == shape_line_trace)
+		return polygon_polygon_intersect(static_cast<line_trace*>(source), static_cast<line_trace*>(target), mtd);
+#endif
+	return false;
 }
 
 bool collision_utils::intersect(vector p0, vector p1, vector q0, vector q1, vector& intersect_point)
@@ -74,81 +99,29 @@ bool collision_utils::aabb_aabb_intersect(aabb* source, aabb* target, vector& mt
 	return deltas[0] * deltas[1] <= 0.0f && deltas[2] * deltas[3] <= 0.0f;
 }
 
-bool collision_utils::polygon_polygon_intersect(i_collision_shape* source, i_collision_shape* target, vector& mtd)
+bool collision_utils::do_projections_overlap(float start1, float end1, float start2, float end2, float& overlap_length)
 {
-	auto& vertices1 = caches::inst.vertices1;
-	auto& vertices2 = caches::inst.vertices2;
-
-	source->get_vertices(vertices1);
-	target->get_vertices(vertices2);
-	float max_val = FLOAT_MAX;
-	float min_val = FLOAT_MIN;
-	float max_val2 = FLOAT_MAX;
-	float min_val2 = FLOAT_MIN;
-	float num = 0.0f;
-	float num2 = -1.0f;
-	int32_t i = 0;
-	int32_t num3 = source->get_vertex_count() - 1;
-	while (i < source->get_vertex_count())
-	{
-		vector vec = vertices1[i] - vertices1[num3];
-		vector vec2 = vector(-vec.y, vec.x);
-		unknown3(vec2, vertices1, source->get_vertex_count(), max_val, min_val);
-		unknown3(vec2, vertices2, target->get_vertex_count(), max_val2, min_val2);
-		if (!unknown4(max_val, min_val, max_val2, min_val2, num))
-			return false;
-		unknown5(vec2, num, mtd, num2);
-		num3 = i;
-		i++;
-	}
-	int32_t j = 0;
-	int32_t num4 = target->get_vertex_count() - 1;
-	while (j < target->get_vertex_count())
-	{
-		vector vec3 = vertices2[j] - vertices2[num4];
-		vector vec2 = vector(-vec3.y, vec3.x);
-		unknown3(vec2, vertices1, source->get_vertex_count(), max_val, min_val);
-		unknown3(vec2, vertices2, target->get_vertex_count(), max_val2, min_val2);
-		if (!unknown4(max_val, min_val, max_val2, min_val2, num))
-			return false;
-		unknown5(vec2, num, mtd, num2);
-		num4 = j;
-		j++;
-	}
-	return true;
-}
-
-void collision_utils::unknown3(vector a0, const std::vector<vector>& a1, int32_t a2, float& a3, float& a4)
-{
-	a3 = (a4 = a1[0].dot(a0));
-	for (int32_t i = 1; i < a2; i++)
-	{
-		float num = a1[i].dot(a0);
-		if (num < a3)
-			a3 = num;
-		else if (num > a4)
-			a4 = num;
-	}
-}
-
-bool collision_utils::unknown4(float a0, float a1, float a2, float a3, float& a4)
-{
-	float num = a1 - a2;
-	float num2 = a3 - a0;
-	if (num < 0.0f || num2 < 0.0f)
+	float d1 = end1 - start2;
+	float d2 = end2 - start1;
+	if (d1 < 0.0f || d2 < 0.0f)
 		return false;
-	a4 = ((num < num2) ? (-num) : num2);
+	overlap_length = d1 < d2 ? -d1 : d2;
 	return true;
 }
 
-void collision_utils::unknown5(vector a0, float a1, vector& a2, float& a3)
+void collision_utils::update_mtd(vector axis, float overlap_length, vector& mtd, float& min)
 {
-	float num = a0.length_sqr();
-	float num2 = a1 / num * a1;
-	if (a3 < 0.0f || num2 < a3)
+	float axis_length_sqr = axis.length_sqr();
+	float temp = overlap_length / axis_length_sqr;
+	float td_length = temp * overlap_length;
+	if (td_length < min)
 	{
-		a3 = num2;
-		a2 = a0 * a1 / num;
+		min = td_length;
+#ifdef OPTIMIZE_COLLISION
+		mtd = axis * temp;
+#else
+		mtd = axis * overlap_length / axis_length_sqr;
+#endif
 	}
 }
 

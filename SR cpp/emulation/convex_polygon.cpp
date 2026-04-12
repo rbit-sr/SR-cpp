@@ -4,53 +4,21 @@
 
 using namespace emu;
 
-convex_polygon::convex_polygon(const std::vector<vector>& local_vertices) :
-	m_position{ vec_zero }, m_pivot{ vec_zero }, m_rotation{ 0.0f }
+convex_polygon::convex_polygon(std::initializer_list<vector> local_vertices) :
+	m_position{ vec_zero }, 
+	m_pivot{ vec_zero }, 
+	m_rotation{ 0.0f },
+#ifndef OPTIMIZE_COLLISION
+	m_local_vertices(local_vertices.size()),
+#endif
+	m_vertices(local_vertices.size())
 {
-	m_local_vertices = local_vertices;
-	initialize();
-}
-
-convex_polygon::convex_polygon(vector position, vector pivot, float rotation, const std::vector<vector>& local_vertices) :
-	m_position{ position },
-	m_pivot{ pivot },
-	m_rotation{ rotation },
-	m_local_vertices{ local_vertices }
-{
-	initialize();
-}
-
-convex_polygon::convex_polygon(vector position, vector pivot, float rotation, std::vector<vector>&& local_vertices) :
-	m_position{ position },
-	m_pivot{ pivot },
-	m_rotation{ rotation },
-	m_local_vertices{ std::move(local_vertices) }
-{
-	initialize();
-}
-
-convex_polygon::convex_polygon(i_collision_shape* shape)
-{
-	m_vertices.resize(shape->get_vertex_count());
-	shape->get_vertices(m_vertices);
-	m_position = shape->get_position();
-	m_pivot = shape->get_pivot();
-	m_rotation = shape->get_rotation();
-	m_local_vertices.reserve(m_vertices.size());
-	for (int32_t i = 0; i < m_vertices.size(); i++)
-		m_local_vertices.push_back(m_vertices[i] - m_position);
+#ifdef OPTIMIZE_COLLISION
+	std::ranges::copy(local_vertices, m_vertices.begin());
+#else
+	std::ranges::copy(local_vertices, m_local_vertices.begin());
+#endif
 	calculate_vertices();
-}
-
-convex_polygon convex_polygon::create_obb(vector position, vector size, vector pivot, float rotation)
-{
-	std::vector<vector> array = {
-		vector{ 0.0f, 0.0f },
-		vector{ size.x, 0.0f },
-		vector{ size.x, size.y },
-		vector{ 0.0f, size.y }
-	};
-	return convex_polygon(position, pivot, rotation, std::move(array));
 }
 
 shape convex_polygon::get_id() const
@@ -60,19 +28,14 @@ shape convex_polygon::get_id() const
 
 std::unique_ptr<i_clonable> convex_polygon::clone() const
 {
-	return std::make_unique<convex_polygon>(m_position, m_pivot, m_rotation, m_local_vertices);
-}
-
-void convex_polygon::initialize()
-{
-	m_vertices.clear();
-	m_vertices.resize(m_local_vertices.size());
-	calculate_vertices();
+	return std::make_unique<convex_polygon>(*this);
 }
 
 void convex_polygon::calculate_vertices()
 {
-	m_unknown1 = vec_zero;
+	m_center = vec_zero;
+
+#ifdef OPTIMIZE_COLLISION
 	float cos = 1.0f;
 	float sin = 0.0f;
 
@@ -84,34 +47,44 @@ void convex_polygon::calculate_vertices()
 
 	if (cos == 1.0f)
 	{
-		for (int32_t i = 0; i < m_local_vertices.size(); i++)
+		for (vector& vertex : m_vertices)
 		{
-			vector vec = m_local_vertices[i];
-			vec += m_position;
-			m_vertices[i] = vec;
-			m_unknown1 = m_unknown1 + vec;
+			vertex += m_position;
+			m_center += vertex;
 		}
 	}
 	else
 	{
-		for (int32_t i = 0; i < m_local_vertices.size(); i++)
+		for (vector& vertex : m_vertices)
 		{
-			vector vec = m_local_vertices[i];
-			float num = vec.x - m_pivot.x;
-			float num2 = vec.y - m_pivot.y;
-			vec.x = num * cos - num2 * sin;
-			vec.y = num2 * cos + num * sin;
-			vec += m_pivot + m_position;
-			m_vertices[i] = vec;
-			m_unknown1 = m_unknown1 + vec;
+			vector temp = vertex - m_pivot;
+			vertex.x = temp.x * cos - temp.y * sin;
+			vertex.y = temp.y * cos + temp.x * sin;
+			vertex += m_pivot + m_position;
+			m_center += vertex;
 		}
 	}
-	m_unknown1 = m_unknown1 / (float)m_local_vertices.size();
+#else
+	float cos = std::cos(m_rotation);
+	float sin = std::sin(m_rotation);
+
+	auto it = m_vertices.begin();
+	for (vector vertex : m_local_vertices)
+	{
+		vector temp = vertex - m_pivot;
+		vertex.x = temp.x * cos - temp.y * sin;
+		vertex.y = temp.y * cos + temp.x * sin;
+		vertex += m_pivot + m_position;
+		*(it++) = vertex;
+		m_center += vertex;
+	}
+#endif
+	m_center = m_center / (float)m_vertices.size();
 }
 
 int32_t convex_polygon::get_vertex_count() const
 {
-	return m_vertices.size();
+	return (int32_t)m_vertices.size();
 }
 
 vector convex_polygon::get_vertex(int32_t index) const
@@ -130,18 +103,27 @@ void convex_polygon::get_vertices(std::vector<vector>& vertices) const
 
 vector convex_polygon::get_position() const
 {
-	return m_position;
+    return m_position;
 }
 
 void convex_polygon::set_position(vector position)
 {
+#ifdef OPTIMIZE_COLLISION
+	vector d = position - m_position;
+#endif
 	m_position = position;
+#ifdef OPTIMIZE_COLLISION
+	for (vector& vertex : m_vertices)
+		vertex += d;
+	m_center += d;
+#else
 	calculate_vertices();
+#endif
 }
 
 vector convex_polygon::get_center() const
 {
-	return m_unknown1;
+  	return m_center;
 }
 
 vector convex_polygon::get_pivot() const
@@ -166,9 +148,9 @@ void convex_polygon::set_rotation(float rotation)
 	calculate_vertices();
 }
 
-void convex_polygon::set_position_rotation(vector pos, float rotation)
+void convex_polygon::set_position_rotation(vector position, float rotation)
 {
-	m_position = pos;
+	m_position = position;
 	m_rotation = rotation;
 	calculate_vertices();
 }

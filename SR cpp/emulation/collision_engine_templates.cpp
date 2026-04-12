@@ -1,4 +1,8 @@
+#ifdef COLLISION_ENGINE_H
+#include <ranges>
+
 #include "caches.h"
+#include "config.h"
 
 namespace emu
 {
@@ -24,9 +28,8 @@ namespace emu
 
 		query_results.clear();
 		m_quad_tree.query_leaves(bounds, query_results);
-		for (int32_t i = 0; i < query_results.size(); i++)
+		for (i_collidable* query_result : query_results)
 		{
-			i_collidable* query_result = query_results[i];
 			if (
 				query_result->get_collision() != nullptr &&
 				collidable != query_result &&
@@ -71,15 +74,17 @@ namespace emu
 		auto& tile_actors = caches::inst.tile_actors;
 		auto& tile_actors_count = caches::inst.tile_actors_count;
 
-		int32_t prev_count = tile_actors_count;
+		int32_t prev_count = (int32_t)tile_actors_count;
 
 		m_level->m_tile_layer.get_tile_actors_at(bounds, collision_filter);
-		for (int32_t j = prev_count; j < tile_actors_count; j++)
+		for (const auto& tile_actor : tile_actors | std::views::take(tile_actors_count) | std::views::drop(prev_count))
 		{
 			add_collision(
-				collidable, tile_actors[j].get(),
+				collidable, tile_actor.get(),
 				collidable->get_position(), collidable->get_velocity(),
-				tile_actors[j]->get_position(), tile_actors[j]->get_velocity());
+				tile_actor->get_position(), tile_actor->get_velocity());
 		}
 	}
 }
+
+#endif

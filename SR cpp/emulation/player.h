@@ -218,7 +218,7 @@ namespace emu
 		void get_off_wall(timespan time);
 		void unfreeze();
 
-		bool is_solid(i_collidable* a1);
+		bool is_solid(i_collidable* a1) const;
 		void unknown3(i_collidable* a1);
 		void unknown4(i_collidable* a1);
 		void update_ground_normal();

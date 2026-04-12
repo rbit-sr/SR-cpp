@@ -23,7 +23,7 @@ namespace emu
 	// Each actor contains an actor controller, which is the 'i_actor_controller' interface and
 	// a different implementation for each type of actor. The actor controller stores all the
 	// data and handles all the logic relevant to the specific actor type.
-	struct actor : public i_quad_tree_leaf, public i_controllable
+	struct actor : public i_collidable, public i_controllable
 	{
 		struct
 		{
@@ -78,13 +78,13 @@ namespace emu
 		vector get_velocity() const override;
 		void set_velocity(vector vel);
 		bool is_moving() const;
-		quad_tree_node* get_quad_tree_parent() override;
-		void set_quad_tree_parent(quad_tree_node* parent) override;
+		quad_tree_node* get_quad_tree_parent();
+		void set_quad_tree_parent(quad_tree_node* parent);
 		i_collision_shape* get_collision() override;
 		collision_filter& get_collision_filter() override;
 		collidable_type get_collidable_type() const override;
-		void add_collision(i_collidable* source, i_collidable* target, vector source_pos, vector source_vel, vector target_pos, vector target_vel);
-		void add_collision2(collision_pair& other);
+		collision_pair& add_collision(i_collidable* source, i_collidable* target, vector source_pos, vector source_vel, vector target_pos, vector target_vel);
+		collision_pair& add_collision(collision_pair& other);
 		int32_t get_collision_count() const;
 		collision_pair* get_collision(int32_t index);
 		void reset_collision(float delta, bool unused);

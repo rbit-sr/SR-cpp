@@ -33,6 +33,7 @@
     <ClInclude Include="Emulation\collision_pair.h" />
     <ClInclude Include="Emulation\collidable_type.h" />
     <ClInclude Include="Emulation\collision_utils.h" />
+    <ClInclude Include="emulation\config.h" />
     <ClInclude Include="Emulation\convex_polygon.h" />
     <ClInclude Include="Emulation\editable_actor.h" />
     <ClInclude Include="Emulation\encrypted_float.h" />
@@ -55,6 +56,7 @@
     <ClInclude Include="Emulation\timespan.h" />
     <ClInclude Include="Emulation\trace_line_actor.h" />
     <ClInclude Include="Emulation\trace_polygon_actor.h" />
+    <ClInclude Include="emulation\utility\dyn_array.h" />
     <ClInclude Include="Emulation\vector.h" />
     <ClInclude Include="Emulation\zlib\crc32.h" />
     <ClInclude Include="Emulation\zlib\deflate.h" />
@@ -89,6 +91,12 @@
     <ClCompile Include="Emulation\collision_optimization.cpp" />
     <ClCompile Include="Emulation\collision_pair.cpp" />
     <ClCompile Include="Emulation\collision_utils.cpp" />
+    <ClCompile Include="emulation\collision_utils_templates.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Emulation\convex_polygon.cpp" />
     <ClCompile Include="Emulation\editable_actor.cpp" />
     <ClCompile Include="Emulation\encrypted_float.cpp" />
@@ -133,10 +141,13 @@
     <ClCompile Include="Utility\trajectory_prediction.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="emulation\collision_engine_templates.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-    </None>
+    <ClCompile Include="emulation\collision_engine_templates.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -151,6 +162,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -164,6 +176,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>

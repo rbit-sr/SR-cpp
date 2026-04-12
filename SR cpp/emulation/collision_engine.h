@@ -1,8 +1,6 @@
 #ifndef COLLISION_ENGINE_H
 #define COLLISION_ENGINE_H
 
-#define OPTIMIZE_COLLISION
-
 #include <vector>
 #include <functional>
 
@@ -46,7 +44,7 @@ namespace emu
 			i_collidable* source, i_collidable* target,
 			vector source_pos, vector source_vel,
 			vector target_pos, vector target_vel);
-		void unknown1(const aabb& a1); // unused for now
+		void set_world_bounds(const aabb& a1); // unused for now
 		int32_t trace(vector start_point, vector end_point, std::vector<collision_pair*>& collisions);
 		int32_t trace(vector start_point, vector end_point, collision_filter filter, std::vector<collision_pair*>& collisions);
 		collision_pair* trace_single(vector start_point, vector end_point);
@@ -56,7 +54,7 @@ namespace emu
 		int32_t check_shape(const aabb& bounds, i_collision_shape& collision, collision_filter filter, std::vector<collision_pair*>& collisions);
 		void refresh_collisions_on_actor(actor* actor);
 		void refresh_collisions_on_actor(actor* actor, float remaining_delta_time);
-		int32_t get_collisions_on_actor(i_collidable* actor, std::vector<collision_pair*>& collisions);
+		int32_t get_collisions_on_actor(actor* actor, std::vector<collision_pair*>& collisions);
 		void clear_collisions();
 		void update_collisions(float delta_s);
 		void get_collision_candidates_all_actors();
@@ -65,7 +63,7 @@ namespace emu
 			std::derived_from<i_collidable> auto* collidable,
 			std::invocable<i_collidable*, i_collidable*, vector, vector, vector, vector> auto&& add_collision);
 		void check_collision_candidates_all_actors(float delta_s);
-		void check_collision_candidates(actor* actor, float delta_s);
+		void check_collision_candidates_actor(actor* actor, float delta_s);
 		int32_t check_collision_candidates_from_buf(std::vector<collision_pair*>& colliding);
 	};
 }

@@ -144,7 +144,7 @@ void instance::enable_drawing(bool enable)
 
 	if (enable)
 	{
-		m_win = glfwCreateWindow(window_width, window_height, "SR Bot", NULL, NULL);
+		m_win = glfwCreateWindow((int)window_width, (int)window_height, "SR Bot", NULL, NULL);
 
 		glfwMakeContextCurrent(m_win);
 

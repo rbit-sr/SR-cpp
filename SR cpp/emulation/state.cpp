@@ -14,7 +14,7 @@ state::state()
 state::state(level& level)
 {
 	m_collision_engine.m_level = &level;
-	m_collision_engine.unknown1(aabb{ 0, level.m_tile_layer.get_width() * 16.0f, -500, level.m_tile_layer.get_height() * 16.0f });
+	m_collision_engine.set_world_bounds(aabb{ 0, level.m_tile_layer.get_width() * 16.0f, -500, level.m_tile_layer.get_height() * 16.0f });
 
 	for (const level_actor& def : level.m_actors)
 	{
@@ -65,7 +65,7 @@ void state::update(timespan delta)
 	m_collision_engine.clear_collisions();
 	for (auto& actor : m_collision_engine.m_actors)
 		actor->update(m_time, delta);
-	m_collision_engine.update_collisions(delta.seconds());
+	m_collision_engine.update_collisions((float)delta.seconds());
 	for (auto& actor : m_collision_engine.m_actors)
 	{
 		actor->resolve_collision(m_time, delta);

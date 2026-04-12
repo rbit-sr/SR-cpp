@@ -128,8 +128,8 @@ static event_type get_event_type(
 event get_event_helper::get_event(const player& player)
 {
 	event event;
-	event.event = get_event_type(player, *this);
-	if (event.event != evt_none)
+	event.evt = get_event_type(player, *this);
+	if (event.evt != evt_none)
 	{		
 		event.time = player.m_actor->m_state->m_time - m_init_time;
 		event.vel_bef = m_prev_vel;

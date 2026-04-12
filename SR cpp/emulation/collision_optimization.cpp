@@ -7,13 +7,13 @@ static bool is_colliding_hori(vector p, float length, const level& level)
 {
 	const tile_layer_base& tile_layer = level.m_tile_layer;
 
-	int32_t x = p.x / 16.0f;
-	int32_t y = p.y / 16.0f;
+	int32_t x = (int32_t)(p.x / 16.0f);
+	int32_t y = (int32_t)(p.y / 16.0f);
 
 	if (y < 0 || y >= tile_layer.m_height) [[unlikely]]
 		return false;
 
-	int32_t max_x = (p.x + length) / 16.0f;
+	int32_t max_x = (int32_t)((p.x + length) / 16.0f);
 
 	p.x -= x * 16.0f;
 	p.y -= y * 16.0f;
@@ -79,13 +79,13 @@ static bool is_colliding_vert(vector p, float length, const level& level)
 {
 	const tile_layer_base& tile_layer = level.m_tile_layer;
 
-	int32_t x = p.x / 16.0f;
-	int32_t y = p.y / 16.0f;
+	int32_t x = (int32_t)(p.x / 16.0f);
+	int32_t y = (int32_t)(p.y / 16.0f);
 
 	if (x < 0 || x >= tile_layer.m_width) [[unlikely]]
 		return false;
 
-	int32_t max_y = (p.y + length) / 16.0f;
+	int32_t max_y = (int32_t)((p.y + length) / 16.0f);
 
 	p.x -= x * 16.0f;
 	p.y -= y * 16.0f;

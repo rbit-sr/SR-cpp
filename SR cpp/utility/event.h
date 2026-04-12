@@ -26,7 +26,7 @@ namespace util
 
 	struct event
 	{
-		event_type event = evt_none;
+		event_type evt = evt_none;
 		emu::timespan time = SIZE_MAX;
 		emu::vector vel_bef = emu::vec_zero;
 		emu::vector vel_aft = emu::vec_zero;

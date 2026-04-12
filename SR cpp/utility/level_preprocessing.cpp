@@ -231,8 +231,8 @@ static std::unique_ptr<grap_pot_tile[]> gen_left_grap_pot_map(const tile_layer_b
 // sets "hit" to true if the ceiling is a grapple ceiling
 static float get_grap_dist_point(vector point, std::int32_t dir, bool& hit, std::int32_t width, std::int32_t height, grap_pot_tile* grap_pot_map)
 {
-	std::int32_t x_i = point.x / 16.0f;
-	std::int32_t y_i = point.y / 16.0f;
+	std::int32_t x_i = (int32_t)(point.x / 16.0f);
+	std::int32_t y_i = (int32_t)(point.y / 16.0f);
 
 	if (x_i < 0 || x_i >= width || y_i < 0 || y_i >= height) [[unlikely]]
 		return FLOAT_MAX;
@@ -249,12 +249,12 @@ static float get_grap_dist_point(vector point, std::int32_t dir, bool& hit, std:
 
 	if (right)
 	{
-		hit = tile.pot_right == hit;
+		hit = tile.pot_right == grap_pot::hit;
 		return tile.dist_right * 16.0f + point.y;
 	}
 	else
 	{
-		hit = tile.pot_left == hit;
+		hit = tile.pot_left == grap_pot::hit;
 		return tile.dist_left * 16.0f + point.y;
 	}
 }
@@ -1018,7 +1018,7 @@ static std::vector<std::uint16_t> find_reachable_tile(const level_prep& prep, st
 		vector vert_pos = prep.m_graph.vertices[j].pos;
 
 		if (!any_line_intersect_box(prep, tile_pos, vert_pos, 9.0f, 25.0f))
-			reachable.push_back(j);
+			reachable.push_back((std::uint16_t)j);
 	}
 	return reachable;
 }
@@ -1037,7 +1037,7 @@ static void find_reachable_thread(level_prep& prep, std::size_t off, std::size_t
 
 		if (id == tile_air)
 		{
-			prep.m_reachable[i] = find_reachable_tile(prep, x, y);
+			prep.m_reachable[i] = find_reachable_tile(prep, (std::int32_t)x, (std::int32_t)y);
 			prep.m_reachable[i].shrink_to_fit();
 		}
 
@@ -1213,9 +1213,9 @@ std::pair<float, const path<vertex>*> level_prep::get_min_path_dist(vector p1, v
 	bool oob2 = x2 < 0 || x2 >= m_level->m_tile_layer.m_width || y2 < 0 || y2 >= m_level->m_tile_layer.m_height;
 
 	if (oob1) [[unlikely]]
-		m_oob_reachable1 = find_reachable_tile(*this, x1, y1);
+		m_oob_reachable1 = find_reachable_tile(*this, (std::int32_t)x1, (std::int32_t)y1);
 	if (oob2) [[unlikely]]
-		m_oob_reachable2 = find_reachable_tile(*this, x2, y2);
+		m_oob_reachable2 = find_reachable_tile(*this, (std::int32_t)x2, (std::int32_t)y2);
 
 	auto& reach1 = !oob1 ?
 		m_reachable[x1 + m_level->m_tile_layer.m_width * y1] :
@@ -1256,8 +1256,8 @@ std::pair<float, const path<vertex>*> level_prep::get_min_path_dist(vector p1, v
 	std::sort(reach_dist2.begin(), reach_dist2.end());
 
 	float shortest_dist = -INFINITY;
-	std::size_t shortest_i1 = shortest_i1;
-	std::size_t shortest_i2 = shortest_i2;
+	std::size_t shortest_i1 = 0;
+	std::size_t shortest_i2 = 0;
 
 	while (true)
 	{

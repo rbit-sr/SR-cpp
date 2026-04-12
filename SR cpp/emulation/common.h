@@ -4,6 +4,8 @@
 #include <memory>
 #include <cstdint>
 
+#include "config.h"
+
 namespace emu
 {
 	using uint8_t = std::uint8_t;

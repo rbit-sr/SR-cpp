@@ -99,4 +99,5 @@ vector super_boost_volume::get_direction_vector() const
 	case LEFT_DOWN:
 		return { -0.707f, 0.707f };
 	}
+	return vec_zero;
 }

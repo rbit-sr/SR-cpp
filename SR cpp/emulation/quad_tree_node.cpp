@@ -1,4 +1,5 @@
 #include "quad_tree_node.h"
+#include "actor.h"
 
 using namespace emu;
 
@@ -58,41 +59,43 @@ std::unique_ptr<i_clonable> quad_tree_node::clone() const
 	return std::make_unique<quad_tree_node>(*this);
 }
 
-void quad_tree_node::replace_pointers(const std::map<const i_quad_tree_leaf*, i_quad_tree_leaf*>& map)
+void quad_tree_node::replace_pointers(const std::map<const actor*, actor*>& map)
 {
-	for (int32_t i = 0; i < 4; i++)
+	for (const auto& child : m_children)
 	{
-		if (m_children[i] != nullptr)
-			m_children[i]->replace_pointers(map);
+		if (child != nullptr)
+			child->replace_pointers(map);
 	}
 
-	for (int32_t i = 0; i < m_leaves.size(); i++)
+	for (actor*& leave : m_leaves)
 	{
-		auto it = map.find(m_leaves[i]);
+		auto it = map.find(leave);
 		if (it != map.end())
 		{
-			m_leaves[i] = it->second;
-			m_leaves[i]->set_quad_tree_parent(this);
+			leave = it->second;
+			leave->set_quad_tree_parent(this);
 		}
 	}
 }
 
 void quad_tree_node::clear()
 {
-	for (int32_t i = 0; i < 4; i++)
-		if (m_children[i].get() != nullptr)
+	for (auto& child : m_children)
+	{
+		if (child.get() != nullptr)
 		{
-			m_children[i]->clear();
-			m_children[i].reset();
+			child->clear();
+			child.reset();
 		}
+	}
 
-	for (i_quad_tree_leaf* leaf : m_leaves)
+	for (actor* leaf : m_leaves)
 		leaf->set_quad_tree_parent(nullptr);
 
 	m_leaves.clear();
 }
 
-void quad_tree_node::add(i_quad_tree_leaf* leaf)
+void quad_tree_node::add(actor* leaf)
 {
 	if (leaf->get_quad_tree_parent() == nullptr)
 	{
@@ -102,13 +105,13 @@ void quad_tree_node::add(i_quad_tree_leaf* leaf)
 			m_leaves.push_back(leaf);
 			return;
 		}
-		if (m_children[0] == nullptr)
+		if (m_children.front() == nullptr)
 			refresh_children();
 		get_overlapping_child(leaf->get_bounds())->add(leaf);
 	}
 }
 
-void quad_tree_node::remove(i_quad_tree_leaf* leaf)
+void quad_tree_node::remove(actor* leaf)
 {
 	quad_tree_node* parent = leaf->get_quad_tree_parent();
 	if (parent != nullptr)
@@ -120,7 +123,7 @@ void quad_tree_node::remove(i_quad_tree_leaf* leaf)
 	}
 }
 
-void quad_tree_node::update(i_quad_tree_leaf* leaf)
+void quad_tree_node::update(actor* leaf)
 {
 	remove(leaf);
 	add(leaf);
@@ -166,12 +169,12 @@ quad_tree_node* quad_tree_node::get_overlapping_child(const aabb& bounds)
 	}
 }
 
-void quad_tree_node::query_leaves(const aabb& query, std::vector<i_quad_tree_leaf*>& result)
+void quad_tree_node::query_leaves(const aabb& query, std::vector<actor*>& result)
 {
 	query_leaves_recursion(query, result);
 }
 
-void quad_tree_node::query_leaves_recursion(const aabb& query, std::vector<i_quad_tree_leaf*>& result)
+void quad_tree_node::query_leaves_recursion(const aabb& query, std::vector<actor*>& result)
 {
 	for (int32_t i = 0; i < m_leaves.size(); i++)
 	{
@@ -180,10 +183,10 @@ void quad_tree_node::query_leaves_recursion(const aabb& query, std::vector<i_qua
 	}
 	if (m_children[0] != nullptr)
 	{
-		for (int32_t i = 0; i < 4; i++)
+		for (const auto& child : m_children)
 		{
-			if (m_children[i]->m_bounds.overlaps(query))
-				m_children[i]->query_leaves_recursion(query, result);
+			if (child->m_bounds.overlaps(query))
+				child->query_leaves_recursion(query, result);
 		}
 	}
 }

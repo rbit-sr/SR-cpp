@@ -6,7 +6,7 @@ using namespace emu;
 
 float vector::length() const
 {
-	return std::sqrt((double)length_sqr());
+	return (float)std::sqrt((double)length_sqr());
 }
 
 float vector::length_sqr() const

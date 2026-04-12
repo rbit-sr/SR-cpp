@@ -80,25 +80,113 @@ void tile_layer_base::get_tile_actors_at(const aabb& aabb_query, collision_filte
 	auto& tile_actors = caches::inst.tile_actors;
 	auto& tile_actors_count = caches::inst.tile_actors_count;
 	
-	for (int32_t i = num; i < num3; i++)
+	for (int32_t x = num; x < num3; x++)
 	{
-		for (int32_t j = num2; j < num4; j++)
+		for (int32_t y = num2; y < num4; y++)
 		{
-			int32_t index = get_tile(i, j);
-			const std::unique_ptr<tile_actor>& tile_actor_template = all_tiles[index];
-			if (tile_actor_template.get() != nullptr && tile_actor_template->get_collision_filter().collides_with(filter_query))
+			tile_id tile = get_tile(x, y);
+			if (tile == tile_air)
+				continue;
+
+			collision_filter collision_filter =
+				tile != tile_checkered ?
+				emu::collision_filter{ 16, 0 } :
+				emu::collision_filter{ 64, 0 };
+
+			if (collision_filter.collides_with(filter_query))
 			{
 				if (tile_actors.size() == tile_actors_count)
 					tile_actors.resize(tile_actors_count + 1);
 
 				auto& tile_actor = tile_actors[tile_actors_count++];
 
+#ifdef OPTIMIZE_COLLISION
+				if (tile_actor == nullptr)
+				{
+					tile_actor = std::make_unique<emu::tile_actor>();
+					tile_actor->m_collision_polygon.m_vertices = dyn_array<vector>(3);
+				}
+
+				vector t{ (float)(x * 16), (float)(y * 16) };
+
+				tile_actor->m_collision_filter = collision_filter;
+				tile_actor->m_bounds = aabb{ t.x, t.x + 16.0f, t.y, t.y + 16.0f };
+				switch (tile)
+				{
+				case tile_square:
+				case tile_checkered:
+					tile_actor->m_collidable_type = col_square;
+					tile_actor->m_shape_id = shape_aabb;
+					tile_actor->m_collision_aabb = tile_actor->m_bounds;
+					break;
+				case tile_wall_left:
+					tile_actor->m_collidable_type = col_wall_left;
+					tile_actor->m_shape_id = shape_aabb;
+					tile_actor->m_collision_aabb = tile_actor->m_bounds;
+					break;
+				case tile_grapple_ceil:
+					tile_actor->m_collidable_type = col_grapple_ceil;
+					tile_actor->m_shape_id = shape_aabb;
+					tile_actor->m_collision_aabb = tile_actor->m_bounds;
+					break;
+				case tile_wall_right:
+					tile_actor->m_collidable_type = col_wall_right;
+					tile_actor->m_shape_id = shape_aabb;
+					tile_actor->m_collision_aabb = tile_actor->m_bounds;
+					break;
+				case tile_slope_floor_right:
+				case tile_stairs_right:
+				case tile_checkered_slope_floor_right:
+					tile_actor->m_collidable_type = col_slope_floor_right;
+					tile_actor->m_shape_id = shape_convex_polygon;
+					tile_actor->m_collision_polygon.m_position = t;
+					tile_actor->m_collision_polygon.m_vertices[0] = vector{ 16.0f, 0.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[1] = vector{ 0.0f, 16.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[2] = vector{ 16.0f, 16.0f } + t;
+					tile_actor->m_collision_polygon.m_center = vector{ 32.0f / 3, 32.0f / 3 } + t;
+					break;
+				case tile_slope_floor_left:
+				case tile_stairs_left:
+				case tile_checkered_slope_floor_left:
+					tile_actor->m_collidable_type = col_slope_floor_left;
+					tile_actor->m_shape_id = shape_convex_polygon;
+					tile_actor->m_collision_polygon.m_position = t;
+					tile_actor->m_collision_polygon.m_vertices[0] = vector{ 0.0f, 0.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[1] = vector{ 0.0f, 16.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[2] = vector{ 16.0f, 16.0f } + t;
+					tile_actor->m_collision_polygon.m_center = vector{ 16.0f / 3, 32.0f / 3 } + t;
+					break;
+				case tile_slope_ceil_right:
+				case tile_checkered_slope_ceil_right:
+					tile_actor->m_collidable_type = col_slope_ceil_right;
+					tile_actor->m_shape_id = shape_convex_polygon;
+					tile_actor->m_collision_polygon.m_position = t;
+					tile_actor->m_collision_polygon.m_vertices[0] = vector{ 0.0f, 0.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[1] = vector{ 16.0f, 16.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[2] = vector{ 16.0f, 0.0f } + t;
+					tile_actor->m_collision_polygon.m_center = vector{ 32.0f / 3, 16.0f / 3 } + t;
+					break;
+				case tile_slope_ceil_left:
+				case tile_checkered_slope_ceil_left:
+					tile_actor->m_collidable_type = col_slope_ceil_left;
+					tile_actor->m_shape_id = shape_convex_polygon;
+					tile_actor->m_collision_polygon.m_position = t;
+					tile_actor->m_collision_polygon.m_vertices[0] = vector{ 0.0f, 0.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[1] = vector{ 0.0f, 16.0f } + t;
+					tile_actor->m_collision_polygon.m_vertices[2] = vector{ 16.0f, 0.0f } + t;
+					tile_actor->m_collision_polygon.m_center = vector{ 16.0f / 3, 16.0f / 3 } + t;
+					break;
+				}
+#else
+				const std::unique_ptr<emu::tile_actor>& tile_actor_template = all_tiles[tile];
+
 				if (tile_actor == nullptr)
 					tile_actor = ::clone<emu::tile_actor>(tile_actor_template.get());
 				else
 					tile_actor->set(*tile_actor_template);
 
-				tile_actor->set_position(vector{ (float)(i * 16), (float)(j * 16) });
+				tile_actor->set_position(vector{ (float)(x * 16), (float)(y * 16) });
+#endif
 			}
 		}
 	}

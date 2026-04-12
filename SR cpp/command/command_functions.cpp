@@ -22,7 +22,7 @@ void cmd::cmd_get_ups(instance& inst)
 void cmd::cmd_enable_drawing(instance& inst, bool enable)
 {
 	inst.enable_drawing(enable);
-	std::cout << std::format("{} drawing.", enabled_string(enable));
+	std::cout << std::format("{} drawing.\n", enabled_string(enable));
 }
 
 void cmd::cmd_new_level(instance& inst, std::int32_t width, std::int32_t height)

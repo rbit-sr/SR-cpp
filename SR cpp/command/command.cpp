@@ -12,7 +12,7 @@ std::string_view cmd::extract_part(std::string_view& expr)
 		return "";
 
 	std::size_t end = begin;
-	std::size_t expr_start = expr_start;
+	std::size_t expr_start = 0;
 	if (expr[begin] != '"')
 	{
 		while (end < expr.size() && expr[end] != ' ')

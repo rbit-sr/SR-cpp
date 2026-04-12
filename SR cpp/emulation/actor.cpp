@@ -155,19 +155,20 @@ collidable_type actor::get_collidable_type() const
 	return m_controller->get_collidable_type();
 }
 
-void actor::add_collision(i_collidable* source, i_collidable* target, vector source_pos, vector source_vel, vector target_pos, vector target_vel)
+collision_pair& actor::add_collision(i_collidable* source, i_collidable* target, vector source_pos, vector source_vel, vector target_pos, vector target_vel)
 {
-	m_collisions.emplace_back(source, target, source_pos, source_vel, target_pos, target_vel);
+	return m_collisions.emplace_back(source, target, source_pos, source_vel, target_pos, target_vel);
 }
 
-void actor::add_collision2(collision_pair& other)
+collision_pair& actor::add_collision(collision_pair& other)
 {
 	m_collisions.push_back(other);
+	return m_collisions.back();
 }
 
 int32_t actor::get_collision_count() const
 {
-	return m_collisions.size();
+	return (int32_t)m_collisions.size();
 }
 
 collision_pair* actor::get_collision(int32_t index)

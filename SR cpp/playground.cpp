@@ -10,6 +10,7 @@
 playground::playground()
 {
 	m_level = emu::level{ INIT_LOAD_LEVEL };
+	//m_level = emu::level{ 2000, 2000 };
 }
 
 void playground::init()
@@ -34,10 +35,10 @@ void playground::update_input(const inputs& inputs)
 {
 	emu::player* player = m_state.get_contr<emu::player>(0);
 
-	int32_t sel_x = (inputs.cursor_x + m_camera.position.x) / 16.0f;
-	int32_t sel_y = (inputs.cursor_y + m_camera.position.y) / 16.0f;
+	int32_t sel_x = (int32_t)((inputs.cursor_x + m_camera.position.x) / 16.0f);
+	int32_t sel_y = (int32_t)((inputs.cursor_y + m_camera.position.y) / 16.0f);
 
-	emu::tile_id sel_tile = (emu::tile_id)((size_t)inputs.scroll_y % emu::all_tiles.size());
+	emu::tile_id sel_tile = (emu::tile_id)((size_t)inputs.scroll_y % emu::tile_count);
 
 	if (inputs.held_buttons[GLFW_MOUSE_BUTTON_LEFT] && m_level.m_tile_layer.m_tilemap != nullptr)
 		m_level.m_tile_layer.set_tile(sel_x, sel_y, sel_tile);
@@ -77,11 +78,11 @@ void playground::update(emu::timespan delta, const inputs& inputs, emu::vector v
 
 	if (inputs.pressed_buttons[GLFW_MOUSE_BUTTON_LEFT])
 	{
-		p1 = emu::vector(inputs.cursor_x, inputs.cursor_y) + m_camera.position - emu::vector{ 12.5f, 12.5f };
+		p1 = emu::vector{ (float)inputs.cursor_x, (float)inputs.cursor_y } + m_camera.position - emu::vector{ 12.5f, 12.5f };
 	}
 	if (inputs.pressed_buttons[GLFW_MOUSE_BUTTON_RIGHT])
 	{
-		p2 = emu::vector(inputs.cursor_x, inputs.cursor_y) + m_camera.position - emu::vector{ 12.5f, 12.5f };
+		p2 = emu::vector{ (float)inputs.cursor_x, (float)inputs.cursor_y } + m_camera.position - emu::vector{ 12.5f, 12.5f };
 	}
 
 	if (!m_paused)
@@ -98,9 +99,9 @@ void playground::update(emu::timespan delta, const inputs& inputs, emu::vector v
 
 		util::event event = m_helper.get_event(*m_state.get_contr<emu::player>(0));
 
-		if (m_print_events && event.event != m_last_event && event.event != util::evt_none)
-			std::cout << util::event::to_string(event.event) << "\n";
-		m_last_event = event.event;
+		if (m_print_events && event.evt != m_last_event && event.evt != util::evt_none)
+			std::cout << util::event::to_string(event.evt) << "\n";
+		m_last_event = event.evt;
 	}
 
 	if (m_step_count > 0)
@@ -120,10 +121,10 @@ void playground::draw(const inputs& inputs)
 
 	draw::draw_state(&m_state, m_camera);
 
-	std::int32_t sel_x = (inputs.cursor_x + m_camera.position.x) / 16.0f;
-	std::int32_t sel_y = (inputs.cursor_y + m_camera.position.y) / 16.0f;
+	std::int32_t sel_x = (int32_t)((inputs.cursor_x + m_camera.position.x) / 16.0f);
+	std::int32_t sel_y = (int32_t)((inputs.cursor_y + m_camera.position.y) / 16.0f);
 
-	emu::tile_id sel_tile = (emu::tile_id)((std::size_t)inputs.scroll_y % emu::all_tiles.size());
+	emu::tile_id sel_tile = (emu::tile_id)((std::size_t)inputs.scroll_y % emu::tile_count);
 
 	draw::draw_tile(sel_tile, emu::vector{ (float)(sel_x * 16), (float)(sel_y * 16) } - m_camera.position);
 

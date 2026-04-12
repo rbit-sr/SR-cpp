@@ -109,6 +109,7 @@ collidable_type tile_actor::get_collidable_type() const
 	return m_collidable_type;
 }
 
+#ifndef OPTIMIZE_COLLISION
 const std::vector<std::unique_ptr<tile_actor>> emu::all_tiles = []()
 	{
 		collision_filter default_filter = collision_filter{ 16, 0 };
@@ -156,3 +157,4 @@ const std::vector<std::unique_ptr<tile_actor>> emu::all_tiles = []()
 
 		return all_tiles;
 	}();
+#endif

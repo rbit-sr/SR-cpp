@@ -88,7 +88,7 @@ void player::init()
 	init_hitboxes();
 	m_grapple = m_actor->m_state->spawn<grapple>(vec_zero);
 	m_grapple->m_owner = this;
-	m_player_index = m_actor->m_state->count<player>();
+	m_player_index = (int32_t)m_actor->m_state->count<player>();
 }
 
 void player::init_hitboxes()
@@ -473,12 +473,12 @@ void player::update_basic(timespan time, timespan delta)
 				float act_rad = (grapple_center - (center + velocity * d.delta)).length();
 				float speed = velocity.length();
 				vector line = center - grapple_center;
-				d.swing_angle = std::atan2((double)line.y, (double)line.x);
+				d.swing_angle = (float)std::atan2((double)line.y, (double)line.x);
 				if (d.is_on_ground && act_rad < d.swing_radius)
 					d.swing_radius = line.length();
 				else if (speed > 0.0f)
 				{
-					float delta_angle = std::asin((double)std::clamp(speed * 0.5f * d.delta / d.swing_radius, -1.0f, 1.0f)) * 2.0f;
+					float delta_angle = (float)std::asin((double)std::clamp(speed * 0.5f * d.delta / d.swing_radius, -1.0f, 1.0f)) * 2.0f;
 					if (d.move_direction == 1)
 						delta_angle = -delta_angle;
 					float new_angle = d.swing_angle + delta_angle;
@@ -502,7 +502,7 @@ void player::update_basic(timespan time, timespan delta)
 					velocity.y += physics::acceleration_high * d.delta;
 				else
 					velocity.y += 0.5f * physics::acceleration_high * d.delta;
-				velocity.x = d.move_direction;
+				velocity.x = (float)d.move_direction;
 				if (d.is_on_ground)
 				{
 					d.is_climbing = false;
@@ -790,33 +790,26 @@ void player::unfreeze()
 	}
 }
 
-bool player::is_solid(i_collidable* a1)
+bool player::is_solid(i_collidable* a1) const
 {
-	if (a1->get_collidable_type() >= 0 && a1->get_collidable_type() < 100)
+	collidable_type collidable_type = a1->get_collidable_type();
+	if (collidable_type >= 0 && collidable_type < 100)
 		return true;
 	// ignore unused code
-	int32_t collidable_type = a1->get_collidable_type();
-	if (collidable_type <= 119)
+	switch (collidable_type)
 	{
-		switch (collidable_type)
-		{
-		case col_fall_tile:
-			return a1->get_collision() != nullptr;
-		case col_finish_trigger:
-			return false;
-		case col_saw:
-		case col_obstacle:
-			break;
-		default:
-			if (collidable_type != col_dropped_obstacle)
-				return false;
-			break;
-		}
+	case col_fall_tile:
+		return a1->get_collision() != nullptr;
+	case col_saw:
+	case col_obstacle:
+	case col_dropped_obstacle:
 		return !d.is_using_drill;
-	}
-	if (collidable_type == col_switch_block || collidable_type == col_moving_platform)
+	case col_switch_block:
+	case col_moving_platform:
 		return true;
-	return false;
+	default:
+		return false;
+	}
 }
 
 void player::unknown3(i_collidable* a1)
@@ -1301,19 +1294,19 @@ void player::update_ground_normal()
 			float num2 = actor->get_collision()->get_rotation();
 			if (num2 >= 0.0f)
 			{
-				num2 = mod(actor->get_collision()->get_rotation(), 6.283185307179586);
+				num2 = (float)mod(actor->get_collision()->get_rotation(), 6.283185307179586);
 			}
 			else
 			{
-				num2 = 6.283185307179586 - mod(std::abs(actor->get_collision()->get_rotation()), 6.283185307179586);
+				num2 = (float)(6.283185307179586 - mod(std::abs(actor->get_collision()->get_rotation()), 6.283185307179586));
 			}
 			if (num2 < 1.5707963267948966 || num2 > 4.71238898038469)
 			{
 				num2 += 3.1415927f;
 			}
 			num2 += 1.5707964f;
-			d.ground_normal.x = std::cos((double)num2);
-			d.ground_normal.y = std::sin((double)num2);
+			d.ground_normal.x = (float)std::cos((double)num2);
+			d.ground_normal.y = (float)std::sin((double)num2);
 			return;
 		}
 		break;
@@ -1389,7 +1382,7 @@ void player::unknown6()
 	}
 	if (!d.is_hooked)
 	{
-		if (vector(d.move_direction, 0.0f).dot(d.collision_tangent) <= 0.0f)
+		if (vector{ (float)d.move_direction, 0.0f }.dot(d.collision_tangent) <= 0.0f)
 		{
 			d.collision_tangent = -d.collision_tangent;
 		}
@@ -1677,7 +1670,7 @@ void player::attach_wall(timespan time, int32_t a1, i_collidable* a2)
 void player::resolve_collision(timespan time, timespan delta)
 {
 	// todo
-	d.delta = delta.seconds();
+	d.delta = (float)delta.seconds();
 	resolve_collision_implementation(time);
 	update_hitboxes();
 	// ignore graphics code
@@ -1781,7 +1774,7 @@ void player::update_item(timespan time)
 
 void player::update(timespan time, timespan delta)
 {
-	d.delta = delta.seconds();
+	d.delta = (float)delta.seconds();
 	if (d.item_has_hit && time > d.item_has_hit_time + d.unknown21 && !d.is_stunned)
 		d.item_has_hit = false;
 

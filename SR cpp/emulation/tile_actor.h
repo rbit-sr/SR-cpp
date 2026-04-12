@@ -41,7 +41,9 @@ namespace emu
 		collidable_type get_collidable_type() const override;
 	};
 
+#ifndef OPTIMIZE_COLLISION
 	extern const std::vector<std::unique_ptr<tile_actor>> all_tiles;
+#endif
 }
 
 #endif

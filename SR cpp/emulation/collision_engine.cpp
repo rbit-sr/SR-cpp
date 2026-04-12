@@ -1,8 +1,12 @@
+#include <ranges>
+
 #include "common.h"
 #include "collision_engine.h"
 #include "collision_utils.h"
 #include "tile_layer_base.h"
 #include "caches.h"
+
+#include "config.h"
 
 using namespace emu;
 
@@ -19,7 +23,7 @@ collision_engine::collision_engine(const collision_engine& right) :
 	// be careful when cloning the collision engine to correctly clone
 	// all its members and pointers referencing them
 
-	std::map<const i_quad_tree_leaf*, i_quad_tree_leaf*> leaf_map;
+	std::map<const actor*, actor*> leaf_map;
 	std::map<const i_actor_controller*, i_actor_controller*> contr_map;
 
 	m_actors.reserve(128);
@@ -47,7 +51,7 @@ collision_engine& collision_engine::operator=(const collision_engine& right)
 
 	m_level = right.m_level;
 
-	std::map<const i_quad_tree_leaf*, i_quad_tree_leaf*> leaf_map;
+	std::map<const actor*, actor*> leaf_map;
 	std::map<const i_actor_controller*, i_actor_controller*> contr_map;
 
 	m_auto_col_det_actors.clear();
@@ -151,7 +155,7 @@ void collision_engine::swap_actors(actor* actor1, actor* actor2)
 
 int32_t collision_engine::get_actor_count() const
 {
-	return m_actors.size();
+	return (int32_t)m_actors.size();
 }
 
 actor* collision_engine::get_actor(int32_t index)
@@ -179,7 +183,7 @@ void collision_engine::add_collision_pair(
 	caches::inst.collision_pairs.emplace_back(source, target, source_pos, source_vel, target_pos, target_vel);
 }
 
-void collision_engine::unknown1(const aabb& a1)
+void collision_engine::set_world_bounds(const aabb& a1)
 {
 	m_quad_tree = quad_tree_node{ a1 };
 	for (auto& actor : m_actors)
@@ -225,15 +229,15 @@ collision_pair* collision_engine::trace_single(vector start_point, vector end_po
 
 collision_pair* collision_engine::trace_single(vector start_point, vector end_point, collision_filter filter, float segment_length)
 {
-	vector vec = start_point;
-	vector vec2 = end_point - start_point;
-	float num = vec2.length();
-	vec2 = vec2 / num;
-	while (num > 0.0f)
+	vector next_segment_start = start_point;
+	vector delta = end_point - start_point;
+	float remaining_length = delta.length();
+	delta = delta / remaining_length;
+	while (remaining_length > 0.0f)
 	{
-		vector vec3 = vec;
-		vec = vec3 + vec2 * std::min(num, segment_length);
-		num -= segment_length;
+		vector segment_start = next_segment_start;
+		next_segment_start = segment_start + delta * std::min(remaining_length, segment_length);
+		remaining_length -= segment_length;
 
 		auto& trace_line_actors = caches::inst.trace_line_actors;
 		auto& trace_line_actors_count = caches::inst.trace_line_actors_count;
@@ -244,24 +248,23 @@ collision_pair* collision_engine::trace_single(vector start_point, vector end_po
 		auto& trace_line_actor = trace_line_actors[trace_line_actors_count++];
 
 		if (trace_line_actor == nullptr)
-			trace_line_actor = std::make_unique<::trace_line_actor>(vec3, vec, filter);
+			trace_line_actor = std::make_unique<::trace_line_actor>(segment_start, next_segment_start, filter);
 		else
-			trace_line_actor->set(vec3, vec, filter);
+			trace_line_actor->set(segment_start, next_segment_start, filter);
 
 		get_collision_candidates(trace_line_actor.get());
-		int32_t num2 = check_collision_candidates_from_buf(caches::inst.collision_pairs_ptr);
-		if (num2 > 0)
+		int32_t candidates_count = check_collision_candidates_from_buf(caches::inst.collision_pairs_ptr);
+		if (candidates_count > 0)
 		{
 			collision_pair* result = caches::inst.collision_pairs_ptr[0];
-			float num3 = FLOAT_MAX;
-			for (int32_t i = 0; i < num2; i++)
+			float min_distance = FLOAT_MAX;
+			for (collision_pair* collision : caches::inst.collision_pairs_ptr | std::views::take(candidates_count))
 			{
-				collision_pair* collision_pair = caches::inst.collision_pairs_ptr[i];
-				float num4 = (collision_pair->m_target->get_collision()->get_center() - vec3).length_sqr();
-				if (num4 < num3)
+				float distance = (collision->m_target->get_collision()->get_center() - segment_start).length_sqr();
+				if (distance < min_distance)
 				{
-					result = collision_pair;
-					num3 = num4;
+					result = collision;
+					min_distance = distance;
 				}
 			}
 			return result;
@@ -306,8 +309,8 @@ void collision_engine::refresh_collisions_on_actor(actor* actor)
 		m_quad_tree.update(actor);
 
 	int32_t collisions_on_actor = get_collisions_on_actor(actor, caches::inst.collision_pairs_ptr);
-	for (int32_t i = 0; i < collisions_on_actor; i++)
-		actor->add_collision2(*caches::inst.collision_pairs_ptr[i]);
+	for (collision_pair* collision : caches::inst.collision_pairs_ptr | std::views::take(collisions_on_actor))
+		actor->add_collision(*collision);
 }
 
 void collision_engine::refresh_collisions_on_actor(actor* actor, float remaining_delta_time)
@@ -317,11 +320,11 @@ void collision_engine::refresh_collisions_on_actor(actor* actor, float remaining
 	if (actor->d.is_collidable)
 		m_quad_tree.update(actor);
 
-	get_collision_candidates(actor, std::bind_front(&actor::add_collision, actor));
-	check_collision_candidates(actor, remaining_delta_time);
+	get_collision_candidates(actor, std::bind_front(static_cast<collision_pair&(actor::*)(i_collidable*, i_collidable*, vector, vector, vector, vector)>(&actor::add_collision), actor));
+	check_collision_candidates_actor(actor, remaining_delta_time);
 }
 
-int32_t collision_engine::get_collisions_on_actor(i_collidable* actor, std::vector<collision_pair*>& collisions)
+int32_t collision_engine::get_collisions_on_actor(actor* actor, std::vector<collision_pair*>& collisions)
 {
 	get_collision_candidates(actor);
 	return check_collision_candidates_from_buf(collisions);
@@ -358,7 +361,7 @@ void collision_engine::get_collision_candidates_all_actors()
 	{
 		if (actor->get_collision() != nullptr && actor->d.is_collision_active)
 		{
-			get_collision_candidates(actor, std::bind_front(&actor::add_collision, actor));
+			get_collision_candidates(actor, std::bind_front(static_cast<collision_pair&(actor::*)(i_collidable*, i_collidable*, vector, vector, vector, vector)>(&actor::add_collision), actor));
 		}
 	}
 }
@@ -368,83 +371,78 @@ void collision_engine::check_collision_candidates_all_actors(float a1)
 	for (actor* actor : m_auto_col_det_actors)
 	{
 		if (actor->get_collision_count() > 0)
-			check_collision_candidates(actor, a1);
+			check_collision_candidates_actor(actor, a1);
 	}
 }
 
-void collision_engine::check_collision_candidates(actor* actor, float delta_s)
+void collision_engine::check_collision_candidates_actor(actor* actor, float delta_s)
 {
-	vector vec = vec_zero;
-	vector vec2 = vec_zero;
 	float collision_sweep_minimal_density = actor->d.collision_sweep_minimal_density;
-	int32_t num;
-	float num2;
+	int32_t sweep_count;
+	float iteration_time_step;
 	if (actor->d.should_predict_collision && actor->get_velocity().length_sqr() > 0.0f)
 	{
-		vec = actor->get_size();
-		vec = vec.normalized();
-		vec2.x = std::abs(actor->get_velocity().x);
-		vec2.y = std::abs(actor->get_velocity().y);
-		vec2 = vec2.normalized();
-		if (vec2.x < vec.x)
+		if (std::abs(actor->get_velocity().normalized().x) < actor->get_size().normalized().x)
 		{
-			num = (int32_t)std::ceil((double)(std::abs(actor->get_velocity().y * delta_s) / actor->get_size().y * collision_sweep_minimal_density));
+			sweep_count = (int32_t)std::ceil((double)(std::abs(actor->get_velocity().y * delta_s) / actor->get_size().y * collision_sweep_minimal_density));
 		}
 		else
 		{
-			num = (int32_t)std::ceil((double)(std::abs(actor->get_velocity().x * delta_s) / actor->get_size().x * collision_sweep_minimal_density));
+			sweep_count = (int32_t)std::ceil((double)(std::abs(actor->get_velocity().x * delta_s) / actor->get_size().x * collision_sweep_minimal_density));
 		}
-		num2 = delta_s / (float)num;
+		iteration_time_step = delta_s / sweep_count;
 	}
 	else
 	{
-		num = 0;
-		num2 = delta_s;
+		sweep_count = 0;
+		iteration_time_step = delta_s;
 	}
 	// ignore error handling code
-	actor->d.total_iterations = num + 1;
-	actor->d.iteration_time_step = num2;
+	actor->d.total_iterations = sweep_count + 1;
+	actor->d.iteration_time_step = iteration_time_step;
+	i_collision_shape* collision_shape = actor->get_collision();
+	vector original_position = collision_shape->get_position();
 	int32_t collision_count = actor->get_collision_count();
-	i_collision_shape* collision = actor->get_collision();
-	vector pos = collision->get_position();
-	for (int32_t i = 0; i <= num; i++)
+	for (int32_t i = 0; i <= sweep_count; i++)
 	{
-		collision->set_position(pos + actor->get_velocity() * (float)i * num2);
+		collision_shape->set_position(original_position + actor->get_velocity() * (float)i * iteration_time_step);
 		for (int32_t j = 0; j < collision_count; j++)
 		{
-			collision_pair* collision2 = actor->get_collision(j);
-			i_collidable* target = collision2->m_target;
-			i_collision_shape* collision3 = target->get_collision();
-			vector pos2 = collision3->get_position();
-			collision3->set_position(pos2 + collision2->m_target_vel * (float)i * num2);
+			collision_pair* collision = &actor->m_collisions[j];
+			i_collidable* target = collision->m_target;
+			i_collision_shape* target_collision_shape = target->get_collision();
+			vector original_target_position = target_collision_shape->get_position();
+			target_collision_shape->set_position(original_target_position + collision->m_target_vel * (float)i * iteration_time_step);
 			if (i > 0)
 			{
-				actor->add_collision(actor, target, collision->get_position(), actor->get_velocity(), collision3->get_position(), target->get_velocity());
-				collision2 = actor->get_collision(actor->get_collision_count() - 1);
+				collision = &actor->add_collision(
+					actor, target, 
+					collision_shape->get_position(), actor->get_velocity(), 
+					target_collision_shape->get_position(), target->get_velocity()
+				);
 			}
-			collision2->m_iteration = i;
-			collision2->m_is_colliding = collision_utils::intersect(collision, collision3, collision2->m_mtd);
-			collision3->set_position(pos2);
+			collision->m_iteration = i;
+			collision->m_is_colliding = collision_utils::intersect(collision_shape, target_collision_shape, collision->m_mtd);
+			target_collision_shape->set_position(original_target_position);
 		}
 	}
-	actor->get_collision()->set_position(pos);
+	collision_shape->set_position(original_position);
 }
 
-int32_t collision_engine::check_collision_candidates_from_buf(std::vector<collision_pair*>& a1)
+int32_t collision_engine::check_collision_candidates_from_buf(std::vector<collision_pair*>& colliding)
 {
 	auto& collision_pairs = caches::inst.collision_pairs;
 
-	if (a1.size() < collision_pairs.size())
-		a1.resize(collision_pairs.size());
+	if (colliding.size() < collision_pairs.size())
+		colliding.resize(collision_pairs.size());
 	int32_t result = 0;
-	for (int32_t i = 0; i < collision_pairs.size(); i++)
+	for (collision_pair& collision : collision_pairs)
 	{
-		collision_pair& collision_pair = collision_pairs[i];
-		i_collision_shape* collision = collision_pair.m_source->get_collision();
-		i_collision_shape* collision2 = collision_pair.m_target->get_collision();
-		collision_pair.m_is_colliding = collision_utils::intersect(collision, collision2, collision_pair.m_mtd);
-		if (collision_pair.m_is_colliding && collision_pair.m_mtd.length_sqr() >= 0.0f)
-			a1[result++] = &collision_pair;
+		i_collision_shape* source_collision_shape = collision.m_source->get_collision();
+		i_collision_shape* target_collision_shape = collision.m_target->get_collision();
+		collision.m_is_colliding = collision_utils::intersect(source_collision_shape, target_collision_shape, collision.m_mtd);
+		if (collision.m_is_colliding/* && collision.m_mtd.length_sqr() >= 0.0f*/) // why ???
+			colliding[result++] = &collision;
 		// ignore error handling code
 	}
 	return result;
