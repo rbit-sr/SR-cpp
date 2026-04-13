@@ -130,7 +130,7 @@ bool actor::is_moving() const
 	return d.position_changed || d.rotation_changed || d.size_changed || d.velocity.x != 0.0f || d.velocity.y != 0.0f;
 }
 
-quad_tree_node* actor::get_quad_tree_parent()
+quad_tree_node* actor::get_quad_tree_parent() const
 {
 	return m_quad_tree_parent;
 }
@@ -252,7 +252,7 @@ void actor::update(timespan time, timespan delta)
 	m_controller->update(time, delta);
 }
 
-void actor::resolve_collision(timespan time, timespan delta)
+void actor::resolve_collision(timespan time, timespan delta) const
 {
 	m_controller->resolve_collision(time, delta);
 }

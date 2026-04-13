@@ -44,25 +44,25 @@ bool collision_utils::intersect(i_collision_shape* source, i_collision_shape* ta
 
 bool collision_utils::intersect(vector p0, vector p1, vector q0, vector q1, vector& intersect_point)
 {
-	vector vec = p1 - p0;
-	vector vec2 = q1 - q0;
-	float num = cross(vec, vec2);
-	float num2 = cross(vec2, vec);
-	if (num == 0.0f || num2 == 0.0f)
+	vector d1 = p1 - p0;
+	vector d2 = q1 - q0;
+	float c1 = cross(d1, d2);
+	float c2 = cross(d2, d1);
+	if (c1 == 0.0f || c2 == 0.0f)
 		return false;
-	float num3 = cross(q0 - p0, vec2 / num);
-	float num4 = cross(p0 - q0, vec / num2);
-	if (num3 >= 0.0f && num3 <= 1.0f && num4 >= 0.0f && num4 <= 1.0f)
+	float s = cross(q0 - p0, d2 / c1);
+	float t = cross(p0 - q0, d1 / c2);
+	if (s >= 0.0f && s <= 1.0f && t >= 0.0f && t <= 1.0f)
 	{
-		intersect_point = p0 + num3 * vec;
+		intersect_point = p0 + s * d1;
 		return true;
 	}
 	return false;
 }
 
-float collision_utils::cross(vector a1, vector a2)
+float collision_utils::cross(vector v1, vector v2)
 {
-	return a1.x * a2.y - a1.y * a2.x;
+	return v1.x * v2.y - v1.y * v2.x;
 }
 
 bool collision_utils::aabb_aabb_intersect(aabb* source, aabb* target, vector& mtd)
@@ -96,7 +96,13 @@ bool collision_utils::aabb_aabb_intersect(aabb* source, aabb* target, vector& mt
 		mtd.y = deltas[num];
 		mtd.x = 0.0f;
 	}
+#ifdef OPTIMIZE_COLLISION
+	// only gives non-matching results if both operands are 0.0f or -1.0f
+	// this cannot occur however unless an aabb has size 0
+	return (std::signbit(deltas[0]) ^ std::signbit(deltas[1])) && (std::signbit(deltas[2]) ^ std::signbit(deltas[3]));
+#else
 	return deltas[0] * deltas[1] <= 0.0f && deltas[2] * deltas[3] <= 0.0f;
+#endif
 }
 
 bool collision_utils::do_projections_overlap(float start1, float end1, float start2, float end2, float& overlap_length)

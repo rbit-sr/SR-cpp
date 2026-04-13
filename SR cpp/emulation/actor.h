@@ -78,7 +78,7 @@ namespace emu
 		vector get_velocity() const override;
 		void set_velocity(vector vel);
 		bool is_moving() const;
-		quad_tree_node* get_quad_tree_parent();
+		quad_tree_node* get_quad_tree_parent() const;
 		void set_quad_tree_parent(quad_tree_node* parent);
 		i_collision_shape* get_collision() override;
 		collision_filter& get_collision_filter() override;
@@ -94,7 +94,7 @@ namespace emu
 		void update_collision();
 		void update_collision(float remaining_delta_time);
 		void update(timespan time, timespan delta);
-		void resolve_collision(timespan time, timespan delta);
+		void resolve_collision(timespan time, timespan delta) const;
 		void update_position(); // added this function myself to update position when updating with 'ignore_collision'
 	};
 }

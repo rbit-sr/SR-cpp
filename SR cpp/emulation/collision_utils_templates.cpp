@@ -3,6 +3,7 @@
 #include "config.h"
 #include "line_trace.h"
 #include "aabb.h"
+#include "convex_polygon.h"
 
 namespace emu
 {
@@ -31,6 +32,60 @@ namespace emu
 					std::swap(start.y, end.y);
 				aabb source_aabb{ start.x, end.x, start.y, end.y };
 				return aabb_aabb_intersect(&source_aabb, target, mtd);
+			}
+			else [[unlikely]];
+		}
+
+		if constexpr (std::same_as<std::remove_pointer_t<decltype(target)>, convex_polygon>)
+		{
+			if (
+				target->m_collidable_type == col_slope_floor_right ||
+				target->m_collidable_type == col_slope_floor_left ||
+				target->m_collidable_type == col_slope_ceil_right ||
+				target->m_collidable_type == col_slope_ceil_left)
+			{
+				aabb source_aabb;
+				if constexpr (std::same_as<std::remove_pointer_t<decltype(source)>, aabb>)
+					source_aabb = *source;
+				if constexpr (std::same_as<std::remove_pointer_t<decltype(source)>, line_trace>)
+					source_aabb = aabb{ source->m_start.x, source->m_end.x, source->m_start.y, source->m_end.y };
+
+				aabb target_aabb{ target->m_position.x, target->m_position.x + 16.0f, target->m_position.y, target->m_position.y + 16.0f };
+				if (!aabb_aabb_intersect(&source_aabb, &target_aabb, mtd))
+					return false;
+
+				float e;
+				vector diag_mtd;
+				if (target->m_collidable_type == col_slope_floor_right)
+				{
+					vector d{ source_aabb.max_x - target->m_position.x, source_aabb.max_y - target->m_position.y - 16.0f };
+					e = -(d.x + d.y) / 2.0f;
+					diag_mtd = vector{ e, e };
+					
+				}
+				else if (target->m_collidable_type == col_slope_floor_left)
+				{
+					vector d{ source_aabb.min_x - target->m_position.x, source_aabb.max_y - target->m_position.y };
+					e = (d.x - d.y) / 2.0f;
+					diag_mtd = vector{ -e, e };
+				}
+				else if (target->m_collidable_type == col_slope_ceil_right)
+				{
+					vector d{ source_aabb.max_x - target->m_position.x, source_aabb.min_y - target->m_position.y };
+					e = -(d.x - d.y) / 2.0f;
+					diag_mtd = vector{ e, -e };
+				}
+				else // if (target->m_collidable_type == col_slope_ceil_left)
+				{
+					vector d{ source_aabb.min_x - target->m_position.x, source_aabb.min_y - target->m_position.y - 16.0f };
+					e = (d.x + d.y) / 2.0f;
+					diag_mtd = vector{ -e, -e };
+				}
+				if (!std::signbit(e))
+					return false;
+				if (2 * e * e < mtd.length_sqr())
+					mtd = diag_mtd;
+				return true;
 			}
 		}
 #endif

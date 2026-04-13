@@ -55,34 +55,46 @@ int32_t tile_layer_base::get_height() const
 
 void tile_layer_base::get_tile_actors_at(const aabb& aabb_query, collision_filter filter_query) const
 {
+#ifndef OPTIMIZE_COLLISION
 	if (m_tilemap == nullptr)
 		return;
+#endif
 
-	int32_t num = (int32_t)std::floor((double)(aabb_query.min_x / 16.0f));
-	int32_t num2 = (int32_t)std::floor((double)(aabb_query.min_y / 16.0f));
-	int32_t num3 = (int32_t)std::ceil((double)(aabb_query.max_x / 16.0f));
-	int32_t num4 = (int32_t)std::ceil((double)(aabb_query.max_y / 16.0f));
-	if (num == num3)
+#ifdef OPTIMIZE_COLLISION
+	constexpr float eps = 0.001f;
+#else
+	constexpr float eps = 0.0f;
+#endif
+
+	int32_t begin_x = (int32_t)std::floor((double)(aabb_query.min_x / 16.0f + eps));
+	int32_t begin_y = (int32_t)std::floor((double)(aabb_query.min_y / 16.0f + eps));
+	int32_t end_x = (int32_t)std::ceil((double)(aabb_query.max_x / 16.0f + eps));
+	int32_t end_y = (int32_t)std::ceil((double)(aabb_query.max_y / 16.0f + eps));
+
+#ifndef OPTIMIZE_COLLISION
+	if (begin_x == end_x)
 	{
-		num--;
-		num3++;
+		begin_x--;
+		end_x++;
 	}
-	if (num2 == num4)
+	if (begin_y == end_y)
 	{
-		num2--;
-		num4++;
+		begin_y--;
+		end_y++;
 	}
-	num = std::clamp(num, 0, (int32_t)m_width);
-	num2 = std::clamp(num2, 0, (int32_t)m_height);
-	num3 = std::clamp(num3, 0, (int32_t)m_width);
-	num4 = std::clamp(num4, 0, (int32_t)m_height);
+#endif
+
+	begin_x = std::clamp(begin_x, 0, (int32_t)m_width);
+	begin_y = std::clamp(begin_y, 0, (int32_t)m_height);
+	end_x = std::clamp(end_x, 0, (int32_t)m_width);
+	end_y = std::clamp(end_y, 0, (int32_t)m_height);
 
 	auto& tile_actors = caches::inst.tile_actors;
 	auto& tile_actors_count = caches::inst.tile_actors_count;
 	
-	for (int32_t x = num; x < num3; x++)
+	for (int32_t x = begin_x; x < end_x; x++)
 	{
-		for (int32_t y = num2; y < num4; y++)
+		for (int32_t y = begin_y; y < end_y; y++)
 		{
 			tile_id tile = get_tile(x, y);
 			if (tile == tile_air)
@@ -176,7 +188,10 @@ void tile_layer_base::get_tile_actors_at(const aabb& aabb_query, collision_filte
 					tile_actor->m_collision_polygon.m_vertices[2] = vector{ 16.0f, 0.0f } + t;
 					tile_actor->m_collision_polygon.m_center = vector{ 16.0f / 3, 16.0f / 3 } + t;
 					break;
+				default: [[unlikely]]
+					break;
 				}
+				tile_actor->m_collision_polygon.m_collidable_type = tile_actor->m_collidable_type;
 #else
 				const std::unique_ptr<emu::tile_actor>& tile_actor_template = all_tiles[tile];
 

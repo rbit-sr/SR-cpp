@@ -11,6 +11,9 @@ namespace emu
 		vector m_position;
 		vector m_pivot;
 		float m_rotation;
+#ifdef OPTIMIZE_COLLISION
+		collidable_type m_collidable_type; // cheating a little here to figure out when a polygon is just a right triangle (slope tile)
+#endif
 #ifndef OPTIMIZE_COLLISION
 		dyn_array<vector> m_local_vertices;
 #endif
