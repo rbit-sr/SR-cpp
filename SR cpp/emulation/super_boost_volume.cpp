@@ -14,22 +14,22 @@ super_boost_volume::super_boost_volume(const level_actor& def)
 {
 	de.collision_filter = collision_filter{ 0x1000, 0x0 };
 
-	const std::string& type = def.get("Type");
-	if (type == "LEFT")
+	const std::string* type = def.get("Type");
+	if (*type == "LEFT")
 		m_direction = LEFT;
-	else if (type == "LEFT_UP")
+	else if (*type == "LEFT_UP")
 		m_direction = LEFT_UP;
-	else if (type == "UP")
+	else if (*type == "UP")
 		m_direction = UP;
-	else if (type == "RIGHT_UP")
+	else if (*type == "RIGHT_UP")
 		m_direction = RIGHT_UP;
-	else if (type == "RIGHT")
+	else if (*type == "RIGHT")
 		m_direction = RIGHT;
-	else if (type == "RIGHT_DOWN")
+	else if (*type == "RIGHT_DOWN")
 		m_direction = RIGHT_DOWN;
-	else if (type == "DOWN")
+	else if (*type == "DOWN")
 		m_direction = DOWN;
-	else if (type == "LEFT_DOWN")
+	else if (*type == "LEFT_DOWN")
 		m_direction = LEFT_DOWN;
 	else
 		m_direction = LEFT;
@@ -70,7 +70,7 @@ collidable_type super_boost_volume::get_collidable_type() const
 
 void super_boost_volume::init()
 {
-	editable_actor::init();
+	resizable_editable_actor::init();
 
 	m_bounds.set_from_position_size(m_actor->d.position, m_actor->d.size);
 	m_actor->m_bounds.set_from_position_size(m_actor->d.position, m_actor->d.size);

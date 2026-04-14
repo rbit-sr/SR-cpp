@@ -1403,7 +1403,7 @@ void player::resolve_object_collisions(int max_iteration)
 	int32_t num = 0;
 	while (num < m_actor->get_collision_count() && collision->m_iteration <= max_iteration)
 	{
-		collision = m_actor->get_collision(0);
+		collision = m_actor->get_collision(num);
 		if (collision->m_is_colliding && !dynamic_cast<tile_actor*>(collision->m_target))
 			resolve_object_collision(collision->m_target);
 		num++;
@@ -1418,6 +1418,18 @@ void player::resolve_object_collision(i_collidable* a1)
 	case col_finish_trigger:
 		d.has_touched_finish_bomb = true;
 		break;
+	case col_boost_section:
+	{
+		if (d.is_inside_boost_section)
+			break;
+		d.is_inside_boost_section = true;
+		float num = (d.player_game_mode == 0 || d.player_game_mode == 5) ? 3.0f : 1.0f;
+		d.boost += physics::boost_charge_rate * num * d.delta;
+		d.boost = std::min(d.skin_id == 4 ? 1.0f : 2.0f, d.boost);
+		// ignore graphics and sound code
+		d.was_inside_boost_section = true;
+		break;
+	}
 	case col_super_boost:
 		super_boost_volume* super_boost_volume = static_cast<emu::super_boost_volume*>(static_cast<actor*>(a1)->m_controller.get());
 		// ignore sound code

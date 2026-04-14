@@ -58,6 +58,7 @@
     <ClInclude Include="emulation\resizable_editable_actor.h" />
     <ClInclude Include="emulation\config.h" />
     <ClInclude Include="emulation\utility\dyn_array.h" />
+    <ClInclude Include="emulation\boost_section.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="input_handler.cpp" />
@@ -117,5 +118,6 @@
     <ClCompile Include="emulation\super_boost_volume.cpp" />
     <ClCompile Include="emulation\collision_engine_templates.cpp" />
     <ClCompile Include="emulation\collision_utils_templates.cpp" />
+    <ClCompile Include="emulation\boost_section.cpp" />
   </ItemGroup>
 </Project>

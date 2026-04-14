@@ -1,11 +1,11 @@
 #ifndef SUPER_BOOST_VOLUME_H
 #define SUPER_BOOST_VOLUME_H
 
-#include "editable_actor.h"
+#include "resizable_editable_actor.h"
 
 namespace emu
 {
-	struct super_boost_volume : public editable_actor
+	struct super_boost_volume : public resizable_editable_actor
 	{
 		enum direction
 		{

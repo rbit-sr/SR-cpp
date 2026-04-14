@@ -23,6 +23,7 @@
     <ClInclude Include="Command\command_functions.h" />
     <ClInclude Include="Command\string_util.h" />
     <ClInclude Include="Drawing\camera.h" />
+    <ClInclude Include="emulation\boost_section.h" />
     <ClInclude Include="Emulation\common.h" />
     <ClInclude Include="Drawing\draw_util.h" />
     <ClInclude Include="Emulation\aabb.h" />
@@ -85,6 +86,7 @@
     <ClCompile Include="Drawing\draw_util.cpp" />
     <ClCompile Include="Emulation\aabb.cpp" />
     <ClCompile Include="Emulation\actor.cpp" />
+    <ClCompile Include="emulation\boost_section.cpp" />
     <ClCompile Include="Emulation\caches.cpp" />
     <ClCompile Include="Emulation\collision_engine.cpp" />
     <ClCompile Include="Emulation\collision_filter.cpp" />

@@ -22,6 +22,7 @@ namespace emu
 
 		convex_polygon() = default;
 		convex_polygon(std::initializer_list<vector> local_vertices);
+		convex_polygon(vector position, vector pivot, float rotation, std::initializer_list<vector> local_vertices);
 
 		shape get_id() const override;
 		std::unique_ptr<i_clonable> clone() const override;

@@ -141,6 +141,11 @@ void draw::draw_player(player* player, const camera& camera)
 		1.0f, 0.0f, 0.0f, 
 		player->get_collision()->get_vertex(0) - camera.position,
 		player->get_collision()->get_vertex(2) - camera.position);
+
+	vector top_left = { (camera.viewport_size.x - 200.0f) / 2, 15.0f };
+
+	draw::draw_rectangle(0.7f, 0.7f, 0.7f, top_left, top_left + vector{ 200.0f, 25.0f });
+	draw::draw_rectangle(0.0f, 0.0f, 1.0f, top_left, top_left + vector{ 200.0f * player->d.boost / 2.0f, 25.0f });
 }
 
 void draw::draw_grapple(grapple* grapple, const camera& camera)
@@ -167,8 +172,16 @@ void draw::draw_super_boost_volume(super_boost_volume* super_boost_volume, const
 {
 	draw::draw_rectangle(
 		0.0f, 1.0f, 0.0f,
-		super_boost_volume->m_bounds.get_vertex(0) - camera.position,
-		super_boost_volume->m_bounds.get_vertex(2) - camera.position);
+		super_boost_volume->m_actor->m_bounds.get_vertex(0) - camera.position,
+		super_boost_volume->m_actor->m_bounds.get_vertex(2) - camera.position);
+}
+
+void draw::draw_boost_section(boost_section* boost_section, const camera& camera)
+{
+	draw::draw_rectangle(
+		0.0f, 1.0f, 0.0f,
+		boost_section->m_actor->m_bounds.get_vertex(0) - camera.position,
+		boost_section->m_actor->m_bounds.get_vertex(2) - camera.position);
 }
 
 void draw::draw_actor_controller(i_actor_controller* controller, const camera& camera)
@@ -181,6 +194,8 @@ void draw::draw_actor_controller(i_actor_controller* controller, const camera& c
 		draw_player_start(player_start, camera);
 	else if (super_boost_volume* super_boost_volume = dynamic_cast<emu::super_boost_volume*>(controller))
 		draw_super_boost_volume(super_boost_volume, camera);
+	else if (boost_section* boost_section = dynamic_cast<emu::boost_section*>(controller))
+		draw_boost_section(boost_section, camera);
 }
 
 void draw::draw_state(state* state, const camera& camera)

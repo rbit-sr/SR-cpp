@@ -9,10 +9,12 @@
 
 using namespace emu;
 
-const std::string& level_actor::get(std::string_view key) const
+const std::string* level_actor::get(std::string_view key) const
 {
 	auto it = std::ranges::find_if(fields, [&](const auto& p) { return p.first == key; });
-	return it->second; // maybe do proper error checking here
+	if (it == fields.end())
+		return nullptr;
+	return &it->second;
 }
 
 level::level() :

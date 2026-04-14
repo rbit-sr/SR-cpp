@@ -304,9 +304,20 @@ int32_t collision_engine::check_shape(
 void collision_engine::refresh_collisions_on_actor(actor* actor)
 {
 	actor->reset_collision(0.0f, false);
-	actor->reset_changed();
+
+//#ifdef OPTIMIZE_COLLISION
+//	if (actor->d.is_collidable && actor->is_moving())
+//#else
 	if (actor->d.is_collidable)
+//#endif
 		m_quad_tree.update(actor);
+
+	actor->reset_changed();
+
+#ifdef OPTIMIZE_COLLISION
+	if (actor->m_controller->get_collidable_type() != col_player)
+		return;
+#endif
 
 	int32_t collisions_on_actor = get_collisions_on_actor(actor, caches::inst.collision_pairs_ptr);
 	for (collision_pair* collision : caches::inst.collision_pairs_ptr | std::views::take(collisions_on_actor))
@@ -316,10 +327,12 @@ void collision_engine::refresh_collisions_on_actor(actor* actor)
 void collision_engine::refresh_collisions_on_actor(actor* actor, float remaining_delta_time)
 {
 	actor->reset_collision(remaining_delta_time, false);
-	actor->reset_changed();
+
 	if (actor->d.is_collidable)
 		m_quad_tree.update(actor);
 
+	actor->reset_changed();
+	
 	get_collision_candidates(actor, std::bind_front(static_cast<collision_pair&(actor::*)(i_collidable*, i_collidable*, vector, vector, vector, vector)>(&actor::add_collision), actor));
 	check_collision_candidates_actor(actor, remaining_delta_time);
 }

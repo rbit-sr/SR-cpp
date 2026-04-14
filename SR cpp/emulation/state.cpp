@@ -3,6 +3,7 @@
 #include "grapple.h"
 #include "player_start.h"
 #include "super_boost_volume.h"
+#include "boost_section.h"
 
 using namespace emu;
 
@@ -20,6 +21,8 @@ state::state(level& level)
 	{
 		if (def.type == "SuperBoostVolume")
 			spawn<super_boost_volume>(def);
+		else if (def.type == "BoostSection")
+			spawn<boost_section>(def);
 	}
 
 	player* player = spawn<emu::player>({ 0.0f, 0.0f });

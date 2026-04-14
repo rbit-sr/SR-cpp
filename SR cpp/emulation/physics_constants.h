@@ -48,6 +48,7 @@ namespace emu::physics
 	constexpr float drill_duration = 3.0f;
 	constexpr float round_start_item_cooldown = 1.5f;
 
+	constexpr float boost_charge_rate = 3.0f;
 	constexpr float boost_consumption_rate = 0.85f;
 
 	constexpr float unused = 200.0f;

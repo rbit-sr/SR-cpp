@@ -21,6 +21,23 @@ convex_polygon::convex_polygon(std::initializer_list<vector> local_vertices) :
 	calculate_vertices();
 }
 
+convex_polygon::convex_polygon(vector position, vector pivot, float rotation, std::initializer_list<vector> local_vertices) :
+	m_position{ position },
+	m_pivot{ pivot },
+	m_rotation{ rotation },
+#ifndef OPTIMIZE_COLLISION
+	m_local_vertices(local_vertices.size()),
+#endif
+	m_vertices(local_vertices.size())
+{
+#ifdef OPTIMIZE_COLLISION
+	std::ranges::copy(local_vertices, m_vertices.begin());
+#else
+	std::ranges::copy(local_vertices, m_local_vertices.begin());
+#endif
+	calculate_vertices();
+}
+
 shape convex_polygon::get_id() const
 {
 	return shape_convex_polygon;

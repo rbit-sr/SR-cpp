@@ -12,7 +12,7 @@ namespace emu
 		std::string type;
 		std::vector<std::pair<std::string, std::string>> fields;
 
-		const std::string& get(std::string_view key) const;
+		const std::string* get(std::string_view key) const;
 	};
 
 	struct level
