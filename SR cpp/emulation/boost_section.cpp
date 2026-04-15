@@ -87,9 +87,9 @@ boost_section& boost_section::operator=(const boost_section& right)
 	m_rotation = right.m_rotation;
 
 	if (is_aabb(m_rotation))
-		std::construct_at(&m_aabb, std::move(right.m_aabb));
+		std::construct_at(&m_aabb, right.m_aabb);
 	else
-		std::construct_at(&m_polygon, std::move(right.m_polygon));
+		std::construct_at(&m_polygon, right.m_polygon);
 
 	return *this;
 }
@@ -151,6 +151,7 @@ void boost_section::init()
 	case DEGREE_180:
 		m_aabb = aabb{ 0.0f, 175.0f, 0.0f, 64.0f };
 		m_aabb.set_position(m_actor->d.position);
+		m_actor->set_bounds_from_shape(m_aabb);
 		break;
 	case DEGREE_90:
 	case DEGREE_MINUS_90:

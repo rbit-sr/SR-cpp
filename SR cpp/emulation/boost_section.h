@@ -53,8 +53,6 @@ namespace emu
 		collidable_type get_collidable_type() const override;
 
 		void init() override;
-
-		vector get_direction_vector() const;
 	};
 }
 

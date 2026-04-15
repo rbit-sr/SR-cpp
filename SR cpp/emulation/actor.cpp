@@ -248,7 +248,9 @@ void actor::update_collision(float remaining_delta_time)
 
 void actor::update(timespan time, timespan delta)
 {
+#ifndef OPTIMIZE_COLLISION
 	update_collision();
+#endif
 	m_controller->update(time, delta);
 }
 
