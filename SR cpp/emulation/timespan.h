@@ -13,7 +13,7 @@ namespace emu
 
 		timespan();
 		constexpr timespan(uint64_t ticks) :
-			ticks(ticks) {}
+			ticks{ ticks } {}
 		explicit timespan(float seconds);
 
 		operator uint64_t() const;

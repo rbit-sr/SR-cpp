@@ -28,8 +28,10 @@ namespace emu
 		state();
 		state(level& level);
 		state(const state& right);
+		state(state&& right) noexcept;
 
 		state& operator=(const state& right);
+		state& operator=(state&& right) noexcept;
 
 		std::vector<std::unique_ptr<actor>>& actors();
 		const std::vector<std::unique_ptr<actor>>& actors() const;
@@ -41,17 +43,17 @@ namespace emu
 			std::unique_ptr<T> t = std::make_unique<T>();
 			T* t_ptr = t.get();
 
-			vector size;
-			bool is_col = false;
-			bool auto_col_det = false;
-			bool should_pred_col = false;
-			t_ptr->get_actor_params(size, is_col, auto_col_det, should_pred_col);
+			actor_init_params params = t_ptr->get_actor_params();
 
-			std::unique_ptr<actor> actor = std::make_unique<emu::actor>(this, id == -1 ? m_next_actor_id++ : id, position, size);
+			std::unique_ptr<actor> actor = std::make_unique<emu::actor>(this, id == -1 ? m_next_actor_id++ : id, position, params.size);
 			
-			actor->d.is_collidable = is_col;
-			actor->d.automatic_collision_detection = auto_col_det;
-			actor->d.should_predict_collision = should_pred_col;
+			actor->d.is_collidable = params.is_col;
+			actor->d.automatic_collision_detection = params.auto_col_det;
+			actor->d.should_predict_collision = params.should_pred_col;
+#ifdef OPTIMIZE_COLLISION
+			actor->m_has_update = params.has_update;
+			actor->m_is_movable = params.is_movable;
+#endif
 
 			actor->set_controller(std::move(t));
 			t_ptr->reset();
@@ -68,17 +70,17 @@ namespace emu
 			std::unique_ptr<T> t = std::make_unique<T>(def);
 			T* t_ptr = t.get();
 
-			vector dummy;
-			bool is_col = false;
-			bool auto_col_det = false;
-			bool should_pred_col = false;
-			t_ptr->get_actor_params(dummy, is_col, auto_col_det, should_pred_col);
+			actor_init_params params = t_ptr->get_actor_params();
 
 			std::unique_ptr<actor> actor = std::make_unique<emu::actor>(this, id == -1 ? m_next_actor_id++ : id, def.position, def.size);
 
-			actor->d.is_collidable = is_col;
-			actor->d.automatic_collision_detection = auto_col_det;
-			actor->d.should_predict_collision = should_pred_col;
+			actor->d.is_collidable = params.is_col;
+			actor->d.automatic_collision_detection = params.auto_col_det;
+			actor->d.should_predict_collision = params.should_pred_col;
+#ifdef OPTIMIZE_COLLISION
+			actor->m_has_update = params.has_update;
+			actor->m_is_movable = params.is_movable;
+#endif
 
 			actor->set_controller(std::move(t));
 			t_ptr->reset();

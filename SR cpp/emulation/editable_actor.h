@@ -31,11 +31,8 @@ namespace emu
 
 		aabb m_bounds;
 
-		virtual std::unique_ptr<i_clonable> clone() const override;
-		virtual bool set(const i_actor_controller* other) override;
 		virtual void replace_pointers(const std::map<const i_actor_controller*, i_actor_controller*>& map) override;
 
-		virtual void get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col) override;
 		virtual actor* get_actor() override;
 		virtual void set_actor(actor* actor) override;
 		virtual i_collision_shape* get_collision() override;

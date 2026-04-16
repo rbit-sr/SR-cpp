@@ -59,6 +59,7 @@
     <ClInclude Include="emulation\config.h" />
     <ClInclude Include="emulation\utility\dyn_array.h" />
     <ClInclude Include="emulation\boost_section.h" />
+    <ClInclude Include="emulation\obstacle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="input_handler.cpp" />
@@ -119,5 +120,6 @@
     <ClCompile Include="emulation\collision_engine_templates.cpp" />
     <ClCompile Include="emulation\collision_utils_templates.cpp" />
     <ClCompile Include="emulation\boost_section.cpp" />
+    <ClCompile Include="emulation\obstacle.cpp" />
   </ItemGroup>
 </Project>

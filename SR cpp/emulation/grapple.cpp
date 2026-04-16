@@ -28,12 +28,19 @@ void grapple::replace_pointers(const std::map<const i_actor_controller*, i_actor
 		m_owner = dynamic_cast<player*>(it->second);
 }
 
-void grapple::get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col)
+actor_init_params grapple::get_actor_params()
 {
-	size = vector{ 12.0f, 12.0f };
-	is_col = true;
-	auto_col_det = true;
-	should_pred_col = true;
+	return
+	{
+		.size = vector{ 12.0f, 12.0f },
+		.auto_col_det = true,
+		.is_col = true,
+		.should_pred_col = true,
+#ifdef OPTIMIZE_COLLISION
+		.has_update = false,
+		.is_movable = true
+#endif
+	};
 }
 
 actor* grapple::get_actor()

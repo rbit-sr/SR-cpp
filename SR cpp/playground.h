@@ -27,6 +27,7 @@ struct playground
 	emu::level m_level;
 	emu::state m_state;
 	draw::camera m_camera;
+	emu::player* m_player;
 
 	bool m_draw_right_pot_map = false;
 	bool m_draw_left_pot_map = false;

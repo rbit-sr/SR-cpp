@@ -2,27 +2,7 @@
 
 using namespace emu;
 
-std::unique_ptr<i_clonable> editable_actor::clone() const
-{
-	return std::make_unique<editable_actor>(*this);
-}
-
-bool editable_actor::set(const i_actor_controller* other)
-{
-	if (const editable_actor* ptr_cast = dynamic_cast<const editable_actor*>(other))
-	{
-		*this = *ptr_cast;
-		return true;
-	}
-	return false;
-}
-
 void editable_actor::replace_pointers(const std::map<const i_actor_controller*, i_actor_controller*>& map)
-{
-
-}
-
-void editable_actor::get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col)
 {
 
 }

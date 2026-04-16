@@ -2,7 +2,8 @@
 
 using namespace emu;
 
-timespan::timespan() {}
+timespan::timespan() :
+	ticks{ 0 } {}
 
 timespan::timespan(float seconds) :
 	ticks{ (uint64_t)(seconds * 1E07) } {}

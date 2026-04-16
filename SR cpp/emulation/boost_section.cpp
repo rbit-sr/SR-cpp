@@ -22,7 +22,7 @@ boost_section::boost_section()
 	m_rotation = DEGREE_0;
 
 #ifdef OPTIMIZE_COLLISION
-	std::construct_at(&m_aabb);
+	std::construct_at(std::launder(&m_aabb));
 #endif
 }
 
@@ -53,20 +53,21 @@ boost_section::boost_section(const level_actor& def)
 
 #ifdef OPTIMIZE_COLLISION
 	if (is_aabb(m_rotation))
-		std::construct_at(&m_aabb);
+		std::construct_at(std::launder(&m_aabb));
 	else
-		std::construct_at(&m_polygon);
+		std::construct_at(std::launder(&m_polygon));
 #endif
 }
 
 #ifdef OPTIMIZE_COLLISION
 boost_section::boost_section(const boost_section& right) :
+	editable_actor{ right },
 	m_rotation{ right.m_rotation }
 {
 	if (is_aabb(m_rotation))
-		std::construct_at(&m_aabb, right.m_aabb);
+		std::construct_at(std::launder(&m_aabb), right.m_aabb);
 	else
-		std::construct_at(&m_polygon, right.m_polygon);
+		std::construct_at(std::launder(&m_polygon), right.m_polygon);
 }
 
 boost_section::~boost_section()
@@ -87,9 +88,9 @@ boost_section& boost_section::operator=(const boost_section& right)
 	m_rotation = right.m_rotation;
 
 	if (is_aabb(m_rotation))
-		std::construct_at(&m_aabb, right.m_aabb);
+		std::construct_at(std::launder(&m_aabb), right.m_aabb);
 	else
-		std::construct_at(&m_polygon, right.m_polygon);
+		std::construct_at(std::launder(&m_polygon), right.m_polygon);
 
 	return *this;
 }
@@ -115,12 +116,19 @@ void boost_section::replace_pointers(const std::map<const i_actor_controller*, i
 
 }
 
-void boost_section::get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col)
+actor_init_params boost_section::get_actor_params()
 {
-	size = vector{ 175.0f, 64.0f };
-	is_col = true;
-	auto_col_det = false;
-	should_pred_col = false;
+	return
+	{
+		.size = vector{ 175.0f, 64.0f },
+		.auto_col_det = false,
+		.is_col = true,
+		.should_pred_col = false,
+#ifdef OPTIMIZE_COLLISION
+		.has_update = false,
+		.is_movable = false
+#endif
+	};
 }
 
 i_collision_shape* boost_section::get_collision()

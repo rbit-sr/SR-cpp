@@ -24,12 +24,18 @@ namespace emu
 		quad_tree_node m_quad_tree = quad_tree_node{ aabb{} };
 		std::vector<std::unique_ptr<actor>> m_actors; // this list owns all the actors
 		std::vector<actor*> m_auto_col_det_actors; // all actors with 'm_automatic_collision_detection' set to true
+#ifdef OPTIMIZE_COLLISION
+		std::vector<actor*> m_actors_has_update;
+		std::vector<actor*> m_actors_is_movable;
+#endif
 		level* m_level;
 
 		collision_engine();
 		collision_engine(const collision_engine& right);
+		collision_engine(collision_engine&&) noexcept = default;
 
 		collision_engine& operator=(const collision_engine& right);
+		collision_engine& operator=(collision_engine&&) noexcept = default;
 
 		void clear();
 		void reset_actors();

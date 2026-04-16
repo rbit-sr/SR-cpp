@@ -32,6 +32,17 @@ quad_tree_node::quad_tree_node(const quad_tree_node& right) :
 	}
 }
 
+quad_tree_node::quad_tree_node(quad_tree_node&& right) noexcept :
+	m_center{ right.m_center },
+	m_depth{ right.m_depth },
+	m_bounds{ right.m_bounds },
+	m_children{ std::move(right.m_children) },
+	m_leaves{ std::move(right.m_leaves) }
+{
+	for (actor* leaf : m_leaves)
+		leaf->set_quad_tree_parent(this);
+}
+
 quad_tree_node& quad_tree_node::operator=(const quad_tree_node& right)
 {
 	m_center = right.m_center;
@@ -51,6 +62,20 @@ quad_tree_node& quad_tree_node::operator=(const quad_tree_node& right)
 		else
 			m_children[i].reset();
 	}
+	return *this;
+}
+
+quad_tree_node& quad_tree_node::operator=(quad_tree_node&& right) noexcept
+{
+	m_center = right.m_center;
+	m_depth = right.m_depth;
+	m_bounds = right.m_bounds;
+	m_children = std::move(right.m_children);
+	m_leaves = std::move(right.m_leaves);
+
+	for (actor* leaf : m_leaves)
+		leaf->set_quad_tree_parent(this);
+
 	return *this;
 }
 

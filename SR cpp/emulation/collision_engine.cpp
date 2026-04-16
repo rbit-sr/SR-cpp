@@ -14,6 +14,10 @@ collision_engine::collision_engine()
 {
 	m_actors.reserve(128);
 	m_auto_col_det_actors.reserve(128);
+#ifdef OPTIMIZE_COLLISION
+	m_actors_has_update.reserve(128);
+	m_actors_is_movable.reserve(128);
+#endif
 }
 
 collision_engine::collision_engine(const collision_engine& right) :
@@ -28,14 +32,24 @@ collision_engine::collision_engine(const collision_engine& right) :
 
 	m_actors.reserve(128);
 	m_auto_col_det_actors.reserve(128);
+#ifdef OPTIMIZE_COLLISION
+	m_actors_has_update.reserve(128);
+	m_actors_is_movable.reserve(128);
+#endif
 
 	for (const auto& actor : right.m_actors)
 	{
-		::actor* newActor = m_actors.emplace_back(::clone<::actor>(actor.get())).get();
-		leaf_map.emplace(actor.get(), newActor);
-		contr_map.emplace(actor->m_controller.get(), newActor->m_controller.get());
-		if (newActor->d.automatic_collision_detection)
-			m_auto_col_det_actors.push_back(newActor);
+		::actor* new_actor = m_actors.emplace_back(::clone<::actor>(actor.get())).get();
+		leaf_map.emplace(actor.get(), new_actor);
+		contr_map.emplace(actor->m_controller.get(), new_actor->m_controller.get());
+		if (new_actor->d.automatic_collision_detection)
+			m_auto_col_det_actors.push_back(new_actor);
+#ifdef OPTIMIZE_COLLISION
+		if (new_actor->m_has_update)
+			m_actors_has_update.push_back(new_actor);
+		if (new_actor->m_is_movable)
+			m_actors_is_movable.push_back(new_actor);
+#endif
 	}
 
 	m_quad_tree.replace_pointers(leaf_map);
@@ -55,6 +69,10 @@ collision_engine& collision_engine::operator=(const collision_engine& right)
 	std::map<const i_actor_controller*, i_actor_controller*> contr_map;
 
 	m_auto_col_det_actors.clear();
+#ifdef OPTIMIZE_COLLISION
+	m_actors_has_update.clear();
+	m_actors_is_movable.clear();
+#endif
 
 	auto it = m_actors.begin();
 	auto it_r = right.m_actors.begin();
@@ -68,16 +86,28 @@ collision_engine& collision_engine::operator=(const collision_engine& right)
 		contr_map.emplace((*it_r)->m_controller.get(), actor->m_controller.get());
 		if (actor->d.automatic_collision_detection)
 			m_auto_col_det_actors.push_back(actor);
+#ifdef OPTIMIZE_COLLISION
+		if (actor->m_has_update)
+			m_actors_has_update.push_back(actor);
+		if (actor->m_is_movable)
+			m_actors_is_movable.push_back(actor);
+#endif
 	}
 	if (it == m_actors.end())
 	{
 		for (; it_r != right.m_actors.end(); ++it_r)
 		{
-			actor* newActor = m_actors.emplace_back(::clone<actor>(it_r->get())).get();
-			leaf_map.emplace(it_r->get(), newActor);
-			contr_map.emplace((*it_r)->m_controller.get(), newActor->m_controller.get());
-			if (newActor->d.automatic_collision_detection)
-				m_auto_col_det_actors.push_back(newActor);
+			actor* new_actor = m_actors.emplace_back(::clone<actor>(it_r->get())).get();
+			leaf_map.emplace(it_r->get(), new_actor);
+			contr_map.emplace((*it_r)->m_controller.get(), new_actor->m_controller.get());
+			if (new_actor->d.automatic_collision_detection)
+				m_auto_col_det_actors.push_back(new_actor);
+#ifdef OPTIMIZE_COLLISION
+			if (new_actor->m_has_update)
+				m_actors_has_update.push_back(new_actor);
+			if (new_actor->m_is_movable)
+				m_actors_is_movable.push_back(new_actor);
+#endif
 		}
 	}
 	else
@@ -97,6 +127,10 @@ void collision_engine::clear()
 	m_quad_tree.clear();
 	m_actors.clear();
 	m_auto_col_det_actors.clear();
+#ifdef OPTIMIZE_COLLISION
+	m_actors_has_update.clear();
+	m_actors_is_movable.clear();
+#endif
 }
 
 void collision_engine::reset_actors()
@@ -111,6 +145,12 @@ void collision_engine::add_actor(std::unique_ptr<actor>&& actor)
 	m_actors.emplace_back(std::move(actor));
 	if (actor_ptr->d.automatic_collision_detection)
 		m_auto_col_det_actors.push_back(actor_ptr);
+#ifdef OPTIMIZE_COLLISION
+	if (actor_ptr->m_has_update)
+		m_actors_has_update.push_back(actor_ptr);
+	if (actor_ptr->m_is_movable)
+		m_actors_is_movable.push_back(actor_ptr);
+#endif
 	if (actor_ptr->d.is_collidable)
 		m_quad_tree.add(actor_ptr);
 }
@@ -127,6 +167,20 @@ void collision_engine::remove_actor(actor* actor)
 		if (it2 != m_auto_col_det_actors.end())
 			m_auto_col_det_actors.erase(it2);
 	}
+#ifdef OPTIMIZE_COLLISION
+	if (actor->m_has_update)
+	{
+		auto it2 = std::ranges::find(m_actors_has_update, actor);
+		if (it2 != m_actors_has_update.end())
+			m_actors_has_update.erase(it2);
+	}
+	if (actor->m_is_movable)
+	{
+		auto it2 = std::ranges::find(m_actors_is_movable, actor);
+		if (it2 != m_actors_is_movable.end())
+			m_actors_is_movable.erase(it2);
+	}
+#endif
 
 	auto it1 = std::ranges::find_if(m_actors, [actor](const auto& u_ptr)
 		{
@@ -344,7 +398,11 @@ void collision_engine::clear_collisions()
 
 void collision_engine::update_collisions(float delta_s)
 {
+#ifdef OPTIMIZE_COLLISION
+	for (auto& actor : m_actors_is_movable)
+#else
 	for (auto& actor : m_actors)
+#endif
 	{
 		if (actor != nullptr && actor->d.is_collidable)
 		{
@@ -352,7 +410,7 @@ void collision_engine::update_collisions(float delta_s)
 			actor->reset_changed();
 
 			if (actor->is_moving())
-				m_quad_tree.update(actor.get());
+				m_quad_tree.update(&*actor);
 		}
 	}
 	get_collision_candidates_all_actors();

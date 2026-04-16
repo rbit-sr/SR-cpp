@@ -55,12 +55,19 @@ void super_boost_volume::replace_pointers(const std::map<const i_actor_controlle
 
 }
 
-void super_boost_volume::get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col)
+actor_init_params super_boost_volume::get_actor_params()
 {
-	size = vector{ 50.0f, 50.0f };
-	is_col = true;
-	auto_col_det = false;
-	should_pred_col = false;
+	return
+	{
+		.size = vector{ 50.0f, 50.0f },
+		.auto_col_det = false,
+		.is_col = true,
+		.should_pred_col = false,
+#ifdef OPTIMIZE_COLLISION
+		.has_update = false,
+		.is_movable = false
+#endif
+	};
 }
 
 collidable_type super_boost_volume::get_collidable_type() const

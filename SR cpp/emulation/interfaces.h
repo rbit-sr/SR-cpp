@@ -54,6 +54,18 @@ namespace emu
 		virtual collidable_type get_collidable_type() const = 0;
 	};
 
+	struct actor_init_params
+	{
+		vector size;
+		bool auto_col_det;
+		bool is_col;
+		bool should_pred_col;
+#ifdef OPTIMIZE_COLLISION
+		bool has_update = true;
+		bool is_movable = true;
+#endif
+	};
+
 	struct i_actor_controller : public i_clonable
 	{
 		virtual ~i_actor_controller() = default;
@@ -61,7 +73,7 @@ namespace emu
 		virtual bool set(const i_actor_controller* other) = 0;
 		virtual void replace_pointers(const std::map<const i_actor_controller*, i_actor_controller*>& map) = 0;
 
-		virtual void get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col) = 0;
+		virtual actor_init_params get_actor_params() = 0;
 		virtual actor* get_actor() = 0;
 		virtual void set_actor(actor* actor) = 0;
 		virtual i_collision_shape* get_collision() = 0;

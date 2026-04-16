@@ -18,23 +18,21 @@ void playground::init()
 	m_state = emu::state{ m_level };
 	//m_prep = util::level_prep{ m_level };
 	m_helper = util::get_event_helper(*m_state.get_contr<emu::player>(0));
+	m_player = m_state.get_contr<emu::player>(0);
 }
 
 void playground::reset()
 {
-	emu::player* player = m_state.get_contr<emu::player>(0);
-	if (player != nullptr)
+	if (m_player != nullptr)
 	{
-		player->reset();
-		player->m_actor->set_position(m_level.get_actor("PlayerStart").position);
-		m_helper = util::get_event_helper(*m_state.get_contr<emu::player>(0));
+		m_player->reset();
+		m_player->m_actor->set_position(m_level.get_actor("PlayerStart").position);
+		m_helper = util::get_event_helper(*m_player);
 	}
 }
 
 void playground::update_input(const inputs& inputs)
 {
-	emu::player* player = m_state.get_contr<emu::player>(0);
-
 	int32_t sel_x = (int32_t)((inputs.cursor_x + m_camera.position.x) / 16.0f);
 	int32_t sel_y = (int32_t)((inputs.cursor_y + m_camera.position.y) / 16.0f);
 
@@ -46,9 +44,9 @@ void playground::update_input(const inputs& inputs)
 		m_level.m_tile_layer.set_tile(sel_x, sel_y, emu::tile_air);
 	if (inputs.held_keys['R'])
 		reset();
-	if (inputs.held_keys['J'] && player != nullptr)
+	if (inputs.held_keys['J'] && m_player != nullptr)
 	{
-		std::cout << player->m_actor->d.velocity.x << " " << player->m_actor->d.velocity.y << " " << player->m_actor->d.position.x << " " << player->m_actor->d.position.y << "\n";
+		std::cout << m_player->m_actor->d.velocity.x << " " << m_player->m_actor->d.velocity.y << " " << m_player->m_actor->d.position.x << " " << m_player->m_actor->d.position.y << "\n";
 	}
 	if (inputs.pressed_keys['F'])
 	{
@@ -74,7 +72,6 @@ emu::vector p2;
 
 void playground::update(emu::timespan delta, const inputs& inputs, emu::vector viewport_size)
 {
-	emu::player* player = m_state.get_contr<emu::player>(0);
 
 	if (inputs.pressed_buttons[GLFW_MOUSE_BUTTON_LEFT])
 	{
@@ -95,9 +92,9 @@ void playground::update(emu::timespan delta, const inputs& inputs, emu::vector v
 	{
 		m_state.update(33333);
 		m_camera.viewport_size = viewport_size;
-		m_camera.update(33333, player->m_actor->d.position);
+		m_camera.update(33333, m_player->m_actor->d.position);
 
-		util::event event = m_helper.get_event(*m_state.get_contr<emu::player>(0));
+		util::event event = m_helper.get_event(*m_player);
 
 		if (m_print_events && event.evt != m_last_event && event.evt != util::evt_none)
 			std::cout << util::event::to_string(event.evt) << "\n";

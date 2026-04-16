@@ -28,7 +28,7 @@ namespace emu
 		bool set(const i_actor_controller* other) override;
 		void replace_pointers(const std::map<const i_actor_controller*, i_actor_controller*>& map) override;
 
-		void get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col) override;
+		actor_init_params get_actor_params() override;
 
 		collidable_type get_collidable_type() const override;
 

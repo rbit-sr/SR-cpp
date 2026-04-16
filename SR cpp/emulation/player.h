@@ -190,7 +190,7 @@ namespace emu
 
 		void set_position(vector position);
 
-		void get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col) override;
+		actor_init_params get_actor_params() override;
 		actor* get_actor() override;
 		void set_actor(actor* actor) override;
 		i_collision_shape* get_collision() override;
@@ -217,10 +217,11 @@ namespace emu
 		void cancel_grapple();
 		void get_off_wall(timespan time);
 		void unfreeze();
+		void hit_obstacle(timespan time, vector velocity);
 
 		bool is_solid(i_collidable* a1) const;
-		void unknown3(i_collidable* a1);
-		void unknown4(i_collidable* a1);
+		void unknown3(timespan time, i_collidable* a1);
+		void unknown4(timespan time, i_collidable* a1);
 		void update_ground_normal();
 		void unknown6();
 		void unknown11(timespan time, i_collidable* a1);

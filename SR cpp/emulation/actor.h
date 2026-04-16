@@ -56,6 +56,11 @@ namespace emu
 	
 		std::vector<collision_pair> m_collisions; // list of all collisions
 
+#ifdef OPTIMIZE_COLLISION
+		bool m_has_update = true;
+		bool m_is_movable = true;
+#endif
+
 		actor(state* state, int32_t id, vector position, vector size);
 		actor(const actor& right);
 		~actor() = default;

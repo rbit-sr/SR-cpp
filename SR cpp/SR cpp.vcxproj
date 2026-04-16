@@ -45,6 +45,7 @@
     <ClInclude Include="Emulation\level.h" />
     <ClInclude Include="Emulation\line_trace.h" />
     <ClInclude Include="Emulation\math.h" />
+    <ClInclude Include="emulation\obstacle.h" />
     <ClInclude Include="Emulation\physics_constants.h" />
     <ClInclude Include="Emulation\player.h" />
     <ClInclude Include="Emulation\quad_tree_node.h" />
@@ -107,6 +108,7 @@
     <ClCompile Include="Emulation\level.cpp" />
     <ClCompile Include="Emulation\line_trace.cpp" />
     <ClCompile Include="Emulation\math.cpp" />
+    <ClCompile Include="emulation\obstacle.cpp" />
     <ClCompile Include="Emulation\player.cpp" />
     <ClCompile Include="Emulation\quad_tree_node.cpp" />
     <ClCompile Include="Emulation\player_start.cpp" />

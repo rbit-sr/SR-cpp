@@ -11,26 +11,26 @@ std::string_view event::to_string(event_type event)
 	{
 	case evt_none:
 		return "none";
-	case evt_land_ground:
-		return "land_ground";
+	case evt_attach_ground:
+		return "attach_ground";
+	case evt_attach_slope:
+		return "attach_slope";
 	case evt_walk_to_slope:
 		return "walk_to_slope";
 	case evt_walk_to_ground:
 		return "walk_to_ground";
-	case evt_walk_off_ground:
-		return "walk_off_ground";
-	case evt_walk_off_slope:
-		return "walk_off_slope";
+	case evt_detach_ground:
+		return "detach_ground";
+	case evt_detach_slope:
+		return "detach_slope";
 	case evt_hit_wall:
 		return "hit_wall";
 	case evt_hit_ceil:
 		return "hit_ceil";
 	case evt_attach_wall:
 		return "attach_wall";
-	case evt_slide_off_wall:
-		return "slide_off_wall";
-	case evt_land_slope_floor:
-		return "land_slope_floor";
+	case evt_detach_wall:
+		return "detach_wall";
 	case evt_hit_slope_ceil:
 		return "hit_slope_ceil";
 	case evt_swing_stop:
@@ -49,15 +49,15 @@ static bool flat_ground(collidable_type col_id)
 static bool sloped_ground(collidable_type col_id)
 {
 	return
-		col_id == col_slope_floor_right || col_id == col_slope_ceil_left;
+		col_id == col_slope_floor_right || col_id == col_slope_floor_left;
 }
 
 get_event_helper::get_event_helper(const player& player)
 {
 	m_init_time = player.m_actor->m_state->m_time;
-	m_was_on_ground = player.d.is_on_ground;
+	m_was_in_air = player.d.is_in_air;
 	m_init_ground_col_id = player.d.ground_collidable_type;
-	m_was_on_wall = player.d.is_climbing;
+	m_was_climbing = player.d.is_climbing;
 	m_was_swinging = player.d.is_swinging;
 	m_prev_vel = player.m_actor->d.velocity;
 }
@@ -68,43 +68,43 @@ static event_type get_event_type(
 {
 	vector vel = player.m_actor->d.velocity;
 
-	if (helper.m_was_on_ground != player.d.is_on_ground || helper.m_init_ground_col_id != player.d.ground_collidable_type)
+	if (helper.m_was_in_air != player.d.is_in_air || helper.m_init_ground_col_id != player.d.ground_collidable_type)
 	{
 		collidable_type ground_col_id = player.d.ground_collidable_type;
 		if (
-			!helper.m_was_on_ground &&
-			player.d.is_on_ground &&
+			helper.m_was_in_air &&
+			!player.d.is_in_air &&
 			flat_ground(ground_col_id))
-			return evt_land_ground;
+			return evt_attach_ground;
 		else if (
-			helper.m_was_on_ground &&
-			player.d.is_on_ground &&
+			!helper.m_was_in_air &&
+			!player.d.is_in_air &&
 			flat_ground(helper.m_init_ground_col_id) &&
 			sloped_ground(ground_col_id))
 			return evt_walk_to_slope;
 		else if (
-			helper.m_was_on_ground &&
-			player.d.is_on_ground &&
+			!helper.m_was_in_air &&
+			!player.d.is_in_air &&
 			sloped_ground(helper.m_init_ground_col_id) &&
 			flat_ground(ground_col_id))
 			return evt_walk_to_ground;
 		else if (
-			helper.m_was_on_ground &&
-			!player.d.is_on_ground)
-			return evt_walk_off_ground;
+			!helper.m_was_in_air &&
+			player.d.is_in_air)
+			return evt_detach_ground;
 		else if (
-			!helper.m_was_on_ground &&
-			player.d.is_on_ground &&
+			helper.m_was_in_air &&
+			!player.d.is_in_air &&
 			sloped_ground(ground_col_id))
-			return evt_land_ground;
+			return evt_attach_slope;
 	}
-	if (!helper.m_was_on_wall && player.d.is_climbing)
+	if (!helper.m_was_climbing && player.d.is_climbing)
 	{
 		return evt_attach_wall;
 	}
-	if (helper.m_was_on_wall && !player.d.is_climbing)
+	if (helper.m_was_climbing && !player.d.is_climbing)
 	{
-		return evt_slide_off_wall;
+		return evt_detach_wall;
 	}
 	if (std::abs(helper.m_prev_vel.x) > 15.0f && std::abs(vel.x) < 5.0f)
 	{
@@ -114,13 +114,13 @@ static event_type get_event_type(
 	{
 		return evt_hit_slope_ceil;
 	}
-	if (helper.m_prev_vel.y < -15.0f && vel.y >= 0.0f)
+	if (helper.m_prev_vel.y < -15.0f && vel.y >= 0.0f /*&& player.d.is_ceiling_hit*/)
 	{
 		return evt_hit_ceil;
 	}
-	//else if (helper.was_swinging && !player.m_swinging)
+	else if (helper.m_was_swinging && !player.d.is_swinging)
 	{
-		//return evt_swing_stop;
+		return evt_swing_stop;
 	}
 	return evt_none;
 }

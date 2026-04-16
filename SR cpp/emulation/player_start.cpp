@@ -28,12 +28,19 @@ void player_start::replace_pointers(const std::map<const i_actor_controller*, i_
 
 }
 
-void player_start::get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col)
+actor_init_params player_start::get_actor_params()
 {
-	size = vector{ 25.0f, 45.0f };
-	is_col = true;
-	auto_col_det = false;
-	should_pred_col = false;
+	return
+	{
+		.size = vector{ 25.0f, 45.0f },
+		.auto_col_det = false,
+		.is_col = true,
+		.should_pred_col = false,
+#ifdef OPTIMIZE_COLLISION
+		.has_update = false,
+		.is_movable = false
+#endif
+	};
 }
 
 collidable_type player_start::get_collidable_type() const

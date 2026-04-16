@@ -184,6 +184,24 @@ void draw::draw_boost_section(boost_section* boost_section, const camera& camera
 		boost_section->m_actor->m_bounds.get_vertex(2) - camera.position);
 }
 
+void draw::draw_obstacle(obstacle* obstacle, const camera& camera)
+{
+	if (!obstacle->d.is_broken)
+	{
+		draw::draw_rectangle(
+			1.0f, 0.5f, 0.0f,
+			obstacle->m_actor->m_bounds.get_vertex(0) - camera.position,
+			obstacle->m_actor->m_bounds.get_vertex(2) - camera.position);
+	}
+	else
+	{
+		draw::draw_rectangle(
+			1.0f, 0.8f, 0.6f,
+			obstacle->m_actor->m_bounds.get_vertex(0) - camera.position,
+			obstacle->m_actor->m_bounds.get_vertex(2) - camera.position);
+	}
+}
+
 void draw::draw_actor_controller(i_actor_controller* controller, const camera& camera)
 {
 	if (player* player = dynamic_cast<emu::player*>(controller))
@@ -196,6 +214,8 @@ void draw::draw_actor_controller(i_actor_controller* controller, const camera& c
 		draw_super_boost_volume(super_boost_volume, camera);
 	else if (boost_section* boost_section = dynamic_cast<emu::boost_section*>(controller))
 		draw_boost_section(boost_section, camera);
+	else if (obstacle* obstacle = dynamic_cast<emu::obstacle*>(controller))
+		draw_obstacle(obstacle, camera);
 }
 
 void draw::draw_state(state* state, const camera& camera)

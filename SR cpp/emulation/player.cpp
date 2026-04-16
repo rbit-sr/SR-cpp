@@ -10,6 +10,7 @@
 #include "caches.h"
 #include "physics_constants.h"
 #include "super_boost_volume.h"
+#include "obstacle.h"
 
 using namespace emu;
 
@@ -41,12 +42,15 @@ void player::set_position(vector position)
 	update_hitboxes();
 }
 
-void player::get_actor_params(vector& size, bool& is_col, bool& auto_col_det, bool& should_pred_col)
+actor_init_params player::get_actor_params()
 {
-	size = vector(25.0f, 45.0f);
-	is_col = true;
-	auto_col_det = true;
-	should_pred_col = true;
+	return
+	{
+		.size = vector{ 25.0f, 45.0f },
+		.auto_col_det = true,
+		.is_col = true,
+		.should_pred_col = true,
+	};
 }
 
 actor* player::get_actor()
@@ -790,6 +794,34 @@ void player::unfreeze()
 	}
 }
 
+void player::hit_obstacle(timespan time, vector velocity)
+{
+	if (!d.is_using_drill && (time - d.stumble_time).seconds() > physics::stumble_duration)
+	{
+		if (d.is_frozen)
+		{
+			m_actor->d.velocity = vector{ m_actor->d.velocity.x * 0.6f, velocity.y };
+		}
+		else
+		{
+			float x = (float)(m_actor->d.velocity.x > 0.0f ? 1 : -1) * std::max(std::abs(m_actor->d.velocity.x) * 0.2f, std::abs(m_actor->d.velocity.x) - physics::running_speed);
+			m_actor->d.velocity = vector{ x, velocity.y };
+		}
+		d.stumble_time = time;
+		d.is_stumbling = true;
+		cancel_grapple();
+		bool was_in_air = d.is_in_air;
+		reset_jump();
+		if (was_in_air)
+		{
+			d.jump_state = 2;
+			d.next_jump_state = 2;
+			d.is_in_air = true;
+		}
+		d.is_taunting = false;
+	}
+}
+
 bool player::is_solid(i_collidable* a1) const
 {
 	collidable_type collidable_type = a1->get_collidable_type();
@@ -812,33 +844,23 @@ bool player::is_solid(i_collidable* a1) const
 	}
 }
 
-void player::unknown3(i_collidable* a1)
+void player::unknown3(timespan time, i_collidable* a1)
 {
 	// todo
-	unknown4(a1);
+	unknown4(time, a1);
 }
 
-void player::unknown4(i_collidable* a1)
+void player::unknown4(timespan time, i_collidable* a1)
 {
 	collidable_type collidable_type = a1->get_collidable_type();
-	if (collidable_type <= 127)
+	switch (collidable_type)
 	{
-		switch (collidable_type)
-		{
-		case 102:
-			// todo
-			break;
-		case 103:
-			break;
-		case 104:
-			if (!d.is_using_drill && true)
-			{
-
-			}
-			break;
-		default:
-			break;
-		}
+	case col_obstacle:
+		static_cast<obstacle*>(static_cast<actor*>(a1)->m_controller.get())->break_(time, m_actor->d.position);
+		hit_obstacle(time, vec_zero);
+		break;
+	default:
+		break;
 	}
 
 	// TODO
@@ -852,7 +874,7 @@ void player::unknown11(timespan time, i_collidable* a1)
 		if (collidable_type != col_wall_right)
 		{
 			if (collidable_type != col_switch_block)
-				unknown4(a1);
+				unknown4(time, a1);
 			else
 			{
 				if (can_climb(a1))
@@ -860,7 +882,7 @@ void player::unknown11(timespan time, i_collidable* a1)
 					attach_wall(time, a1->get_collision()->get_center().x < m_actor->d.position.x ? 1 : -1, a1);
 					return;
 				}
-				unknown4(a1);
+				unknown4(time, a1);
 				return;
 			}
 		}
@@ -1034,10 +1056,10 @@ void player::check_collision(timespan time, timespan delta)
 					flag2 = false;
 					m_unknown13 = collision_pair.m_target;
 					d.ground_collidable_type = collision_pair.m_target->get_collidable_type();
-					unknown3(collision_pair.m_target);
+					unknown3(time, collision_pair.m_target);
 					break;
 				}
-				unknown3(collision_pair.m_target);
+				unknown3(time, collision_pair.m_target);
 			}
 		}
 	}
@@ -1074,10 +1096,10 @@ void player::check_collision(timespan time, timespan delta)
 					{
 						m_unknown13 = collision_pair.m_target;
 						d.ground_collidable_type = collision_pair.m_target->get_collidable_type();
-						unknown3(collision_pair.m_target);
+						unknown3(time, collision_pair.m_target);
 						break;
 					}
-					unknown3(collision_pair.m_target);
+					unknown3(time, collision_pair.m_target);
 				}
 			}
 		}
@@ -1098,7 +1120,7 @@ void player::check_collision(timespan time, timespan delta)
 				}
 				d.is_ceiling_hit = true;
 			}
-			unknown4(collision_pair.m_target);
+			unknown4(time, collision_pair.m_target);
 		}
 	}
 	if (m_actor->d.velocity.x > 0.0f)
@@ -1181,7 +1203,7 @@ void player::check_collision(timespan time, timespan delta)
 		collision_pair& collision_pair = *collision_pairs[i];
 		if (collision_pair.m_is_colliding)
 		{
-			unknown4(collision_pair.m_target);
+			unknown4(time, collision_pair.m_target);
 		}
 	}
 	if (d.unused2 || (!d.is_on_ground && (d.is_colliding_with_solid || d.is_climbing) && ((d.left_held && d.move_direction == -1) || (d.right_held && d.move_direction == 1))))
